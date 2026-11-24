@@ -82,13 +82,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex">
+    <div className="min-h-screen bg-[#090D16] text-slate-100 flex">
       {/* Desktop Admin Sidebar */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-68 bg-[#0F172A] text-slate-300 shrink-0 select-none">
+      <aside className="hidden lg:flex lg:flex-col lg:w-68 bg-[#0B0F19] border-r border-slate-800/80 text-slate-300 shrink-0 select-none">
         {/* Brand */}
-        <div className="h-18 px-6 flex items-center justify-between border-b border-slate-800">
+        <div className="h-18 px-6 flex items-center justify-between border-b border-slate-800/80">
           <Link href="/admin" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#2563EB] to-[#8B5CF6] flex items-center justify-center text-white font-black text-lg shadow-md shadow-blue-500/20">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#2563EB] to-[#8B5CF6] flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform">
               V
             </div>
             <div>
@@ -103,8 +103,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </div>
 
         {/* Admin Credentials Mini Card */}
-        <div className="p-4 mx-3 my-3 bg-slate-800/60 rounded-2xl border border-slate-700/60 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-blue-400 font-bold">
+        <div className="p-3.5 mx-3 my-3 bg-slate-900/80 rounded-2xl border border-slate-800/90 flex items-center gap-3 backdrop-blur-xs">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600/30 to-purple-600/30 border border-blue-500/40 flex items-center justify-center text-blue-400 font-extrabold text-xs shadow-inner">
             ADM
           </div>
           <div className="min-w-0 flex-1">
@@ -130,8 +130,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 href={item.href}
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
                   isActive
-                    ? 'bg-[#2563EB] text-white shadow-md shadow-blue-500/30'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/70'
+                    ? 'bg-gradient-to-r from-[#2563EB] to-indigo-600 text-white shadow-lg shadow-blue-600/30 font-bold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
                 <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
@@ -142,7 +142,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </nav>
 
         {/* Switch back & Logout */}
-        <div className="p-3 border-t border-slate-800 space-y-2">
+        <div className="p-3 border-t border-slate-800/80 space-y-2">
           <Link
             href="/dashboard"
             className="flex items-center justify-between px-3 py-2 text-xs font-bold text-blue-400 bg-blue-950/40 hover:bg-blue-900/50 rounded-xl transition-colors border border-blue-800/50"
@@ -156,7 +156,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           <button
             type="button"
             onClick={handleLogout}
-            className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-rose-400 bg-rose-950/30 hover:bg-rose-900/40 rounded-xl transition-colors border border-rose-800/40"
+            className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-rose-400 bg-rose-950/30 hover:bg-rose-900/40 rounded-xl transition-colors border border-rose-800/40 cursor-pointer"
           >
             <div className="flex items-center gap-2">
               <LogOut className="w-4 h-4 text-rose-400" />
@@ -169,14 +169,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       {/* Mobile Drawer Backdrop */}
       {mobileSidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-xs lg:hidden"
           onClick={() => setMobileSidebarOpen(false)}
         />
       )}
 
       {/* Mobile Admin Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#0F172A] text-slate-300 transform transition-transform duration-300 ease-in-out lg:hidden flex flex-col ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#0B0F19] border-r border-slate-800 text-slate-300 transform transition-transform duration-300 ease-in-out lg:hidden flex flex-col ${
           mobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
         }`}
       >
@@ -209,7 +209,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 onClick={() => setMobileSidebarOpen(false)}
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium ${
                   isActive
-                    ? 'bg-[#2563EB] text-white'
+                    ? 'bg-[#2563EB] text-white font-bold'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
@@ -241,11 +241,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       {/* Main Admin Workspace */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Admin Header */}
-        <header className="h-18 bg-white border-b border-slate-100 px-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30">
+        <header className="h-18 bg-[#0F172A]/90 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center gap-3 flex-1 max-w-md">
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100"
+              className="lg:hidden p-2 rounded-xl text-slate-400 hover:bg-slate-800"
               aria-label="Open sidebar"
             >
               <Menu className="w-5 h-5" />
@@ -253,48 +253,48 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
             {/* Admin Search */}
             <div className="relative w-full">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search students, courses, quiz databases..."
+                placeholder="Qidiruv: talabalar, kurslar, savollar..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9.5 pr-4 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs focus:outline-none focus:border-[#2563EB] focus:bg-white transition-all text-[#1E293B]"
+                className="w-full pl-9.5 pr-4 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs focus:outline-none focus:border-blue-500 focus:bg-slate-900 transition-all text-white placeholder-slate-500"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
             {/* Live System Health Badge */}
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200/60 text-xs font-bold text-emerald-700">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Live: 412 Students Active</span>
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-950/40 border border-emerald-800/50 text-xs font-bold text-emerald-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Live Telemetry: 100% Operational</span>
             </div>
 
             {/* Quick Switch Button */}
             <Link
               href="/dashboard"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-[#2563EB] hover:bg-blue-100 text-xs font-bold transition-colors border border-blue-200/60"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-950/40 text-blue-400 hover:bg-blue-900/50 text-xs font-bold transition-colors border border-blue-800/50"
             >
               <GraduationCap className="w-4 h-4" />
-              <span>Student View</span>
+              <span>Talaba Ko'rinishi</span>
             </Link>
 
             <button
-              className="p-2.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors relative"
+              className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors relative"
               aria-label="Notifications"
             >
               <Bell className="w-5 h-5" />
-              <span className="w-2 h-2 rounded-full bg-amber-500 absolute top-2 right-2 ring-2 ring-white" />
+              <span className="w-2 h-2 rounded-full bg-amber-500 absolute top-2 right-2 ring-2 ring-[#0F172A]" />
             </button>
 
-            <div className="flex items-center gap-2.5 pl-2 border-l border-slate-100">
-              <div className="w-8 h-8 rounded-lg bg-[#0F172A] text-amber-400 flex items-center justify-center font-bold text-xs">
+            <div className="flex items-center gap-2.5 pl-2 border-l border-slate-800">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-md shadow-blue-600/30">
                 AD
               </div>
               <div className="hidden md:block text-left">
-                <p className="text-xs font-bold text-[#1E293B] leading-tight">Admin Console</p>
-                <p className="text-[10px] text-emerald-600 font-semibold">Superuser</p>
+                <p className="text-xs font-bold text-white leading-tight">Admin Console</p>
+                <p className="text-[10px] text-emerald-400 font-semibold">Superuser</p>
               </div>
             </div>
           </div>
