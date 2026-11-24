@@ -6,8 +6,8 @@ Ushbu qo'llanma orqali VOXY platformasining Frontend va Backend qismlarini bepul
 
 ## 🏗️ Arxitektura Xaritasi
 
-* **Frontend (Next.js):** ➔ [Vercel](https://vercel.com) (Bepul, eng tezkor CDN, avtomatik HTTPS)
-* **Backend (FastAPI):** ➔ [Render.com](https://render.com) yoki [Railway.app](https://railway.app) (Python 3, avtomatik Swagger `/docs`, bepul Web Service)
+* **Frontend (Next.js):** ➔ [Render.com](https://render.com) (yoki [Vercel](https://vercel.com))
+* **Backend (FastAPI):** ➔ [Render.com](https://render.com) (Jonli: `https://hackaton-xl22.onrender.com`, Swagger: `/docs`)
 * **Repozitoriy:** `https://github.com/DevDuo2/Hackaton.git`
 
 ---
@@ -24,16 +24,33 @@ git push origin main
 
 ---
 
-## 2-QADAM: Frontendni Vercel'ga Chiqarish (2 daqiqa)
+## 2-QADAM: Frontendni Render.com ga Chiqarish (Web Service)
 
-1. [vercel.com](https://vercel.com) saytiga kiring va **GitHub orqali tizimga kiring** (Log in with GitHub).
-2. **"Add New..."** ➔ **"Project"** tugmasini bosing.
-3. `DevDuo2/Hackaton` repozitoriyasini topib, **"Import"** tugmasini bosing.
-4. **MUHIM SOZLAMA (Monorepo):**
-   * **Root Directory** bo'limida **"Edit"** ni bosing va `my-app` papkasini tanlang!
-   * Framework Preset: **Next.js** avtomatik tanlanadi.
+1. [render.com](https://render.com) Dashboardiga kiring.
+2. **"New +"** ➔ **"Web Service"** tugmasini bosing.
+3. `DevDuo2/Hackaton` repozitoriyasini tanlang.
+4. Quyidagi parametrlarni to'ldiring:
+   * **Name:** `voxy-frontend` (yoki xohlagan nom)
+   * **Region:** Frankfurt (Europe) yoki o'zingizga yaqin
+   * **Root Directory:** `my-app` (MUHIM! Monorepo bo'lgani uchun)
+   * **Runtime:** `Node`
+   * **Build Command:** `npm install && npm run build`
+   * **Start Command:** `npm run start`
+   * **Instance Type:** `Free`
+5. **Environment Variables** bo'limida qo'shing:
+   * **Key:** `NEXT_PUBLIC_API_URL`
+   * **Value:** `https://hackaton-xl22.onrender.com` (Jonli Render API manzilingiz)
+6. **"Deploy Web Service"** tugmasini bosing!
+
+---
+
+## 2.1-VARIANT: Frontendni Vercel'ga Chiqarish (Muqobil)
+
+1. [vercel.com](https://vercel.com) saytiga kiring va **GitHub orqali tizimga kiring**.
+2. **"Add New..."** ➔ **"Project"** ➔ `DevDuo2/Hackaton` ni **Import** qiling.
+3. **Root Directory:** `my-app` qilib tanlang.
+4. **Environment Variables:** `NEXT_PUBLIC_API_URL` = `https://hackaton-xl22.onrender.com`
 5. **"Deploy"** tugmasini bosing!
-6. 🎉 **1 daqiqada tayyor:** Saytingiz `https://voxy-hackaton.vercel.app` kabi jonli havola orqali butun dunyoga ochiladi!
 
 ---
 

@@ -8,3 +8,15 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.2
+
+  - type: web
+    name: voxy-frontend
+    runtime: node
+    rootDir: my-app
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: NEXT_PUBLIC_API_URL
+        value: https://hackaton-xl22.onrender.com
