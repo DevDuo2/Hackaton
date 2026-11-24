@@ -27,3 +27,21 @@ export async function apiRequest<T>(
     throw error;
   }
 }
+
+export interface AIChatResponse {
+  subjectId: string;
+  response: string;
+  suggestedTopics: string[];
+}
+
+export async function askAiTutorApi(
+  subjectId: string,
+  question: string
+): Promise<string> {
+  const data = await apiRequest<AIChatResponse>('/api/ai/chat', {
+    method: 'POST',
+    body: JSON.stringify({ subjectId, question }),
+  });
+  return data.response;
+}
+

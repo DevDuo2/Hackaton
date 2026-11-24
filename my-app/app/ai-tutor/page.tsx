@@ -18,6 +18,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { SUBJECTS } from '../../data/mockData';
+import { askAiTutorApi } from '../../lib/api';
 
 interface Message {
   id: string;
@@ -52,7 +53,7 @@ export default function AITutorPage() {
     ]);
   }, []);
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const text = textToSend || inputMessage;
     if (!text.trim()) return;
 
@@ -67,7 +68,19 @@ export default function AITutorPage() {
     if (!textToSend) setInputMessage('');
     setIsTyping(true);
 
-    setTimeout(() => {
+    try {
+      // First attempt: Call FastAPI backend (Google Gemini 3.5 Flash Lite)
+      const aiReply = await askAiTutorApi(currentSubject.id, text);
+      const aiMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: 'ai',
+        text: aiReply,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+    } catch (err) {
+      console.warn('Backend unavailable, using instant educational fallback', err);
+      // Fallback if backend is waking up or offline
       let aiResponseText = `Ajoyib savol! ${currentSubject.name} bo'yicha tushuntirish:\n\n1. **Asosiy qoida:** ${text} bo'yicha eng muhim tushuncha bu uning qonuniyatlari va amaliy qo'llanilishidir.\n2. **Qadam-baqadam yechim:** Masalani tahlil qilishda dastlab berilgan kattaliklar aniqlanadi, so'ngra mos formula yoki algoritm tatbiq etiladi.\n3. **Tavsiya:** Ushbu mavzuni mustahkamlash uchun VOXY Testlar bo'limida bir nechta amaliy test ishlab ko'ring!`;
 
       if (text.toLowerCase().includes('tenglama') || text.toLowerCase().includes('diskriminant')) {
@@ -84,8 +97,9 @@ export default function AITutorPage() {
       };
 
       setMessages((prev) => [...prev, aiMsg]);
+    } finally {
       setIsTyping(false);
-    }, 700);
+    }
   };
 
   const copyToClipboard = (id: string, text: string) => {
