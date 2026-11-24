@@ -43,3 +43,8 @@ class QuizAnswerSubmit(BaseModel):
 class TelegramLinkRequest(BaseModel):
     userId: str
     telegramUsername: str
+
+class AdminLoginRequest(BaseModel):
+    username: str
+    password: str
+

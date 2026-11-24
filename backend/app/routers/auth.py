@@ -13,9 +13,15 @@ async def login(payload: LoginRequest):
 
     user = None
     if db is not None:
-        user = await db["users"].find_one({"email": email})
+        if email == "admin":
+            user = await db["users"].find_one({"$or": [{"email": "admin@voxy.edu"}, {"role": "admin"}, {"username": "admin"}]})
+        else:
+            user = await db["users"].find_one({"email": email})
     else:
-        user = next((u for u in USERS_DB if u["email"].lower() == email), None)
+        if email in ["admin", "admin@voxy.edu"]:
+            user = next((u for u in USERS_DB if u.get("role") == "admin"), None)
+        else:
+            user = next((u for u in USERS_DB if u["email"].lower() == email), None)
 
     if not user:
         raise HTTPException(

@@ -86,6 +86,7 @@ USERS_DB = [
     {
         "id": "u_admin_1",
         "name": "Admin Nazoratchi",
+        "username": "admin",
         "email": "admin@voxy.edu",
         "password": "admin123",
         "role": "admin",

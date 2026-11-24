@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   ShieldAlert,
   Users,
@@ -18,6 +18,8 @@ import {
   GraduationCap,
   Activity,
   CheckCircle2,
+  LogOut,
+  Loader2
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -26,8 +28,49 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [adminUser, setAdminUser] = useState<{ name?: string; email?: string } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('voxy_auth_user');
+      if (!stored) {
+        router.push('/admin/login');
+        return;
+      }
+      try {
+        const u = JSON.parse(stored);
+        if (u.role !== 'admin') {
+          router.push('/admin/login');
+          return;
+        }
+        setAdminUser(u);
+        setIsAuthorized(true);
+      } catch (e) {
+        router.push('/admin/login');
+      }
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('voxy_auth_user');
+      localStorage.removeItem('voxy_auth_token');
+      router.push('/admin/login');
+    }
+  };
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-[#090D16] flex flex-col items-center justify-center text-white">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-3" />
+        <p className="text-sm font-semibold text-slate-400">Admin huquqlari tekshirilmoqda...</p>
+      </div>
+    );
+  }
 
   const adminNavigation = [
     { name: 'Overview', href: '/admin', icon: ShieldAlert },
@@ -66,7 +109,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-bold text-white truncate">
-              Admin Operator
+              {adminUser?.name || 'Administrator'}
             </p>
             <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -98,18 +141,28 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           })}
         </nav>
 
-        {/* Switch back to Student Dashboard */}
-        <div className="p-3 border-t border-slate-800">
+        {/* Switch back & Logout */}
+        <div className="p-3 border-t border-slate-800 space-y-2">
           <Link
             href="/dashboard"
-            className="flex items-center justify-between px-3 py-2.5 text-xs font-bold text-blue-400 bg-blue-950/40 hover:bg-blue-900/50 rounded-xl transition-colors border border-blue-800/50"
+            className="flex items-center justify-between px-3 py-2 text-xs font-bold text-blue-400 bg-blue-950/40 hover:bg-blue-900/50 rounded-xl transition-colors border border-blue-800/50"
           >
             <div className="flex items-center gap-2">
               <GraduationCap className="w-4 h-4 text-blue-400" />
-              <span>Back to Student Portal</span>
+              <span>Talabalar Portali</span>
             </div>
             <ArrowRightLeft className="w-3.5 h-3.5" />
           </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-rose-400 bg-rose-950/30 hover:bg-rose-900/40 rounded-xl transition-colors border border-rose-800/40"
+          >
+            <div className="flex items-center gap-2">
+              <LogOut className="w-4 h-4 text-rose-400" />
+              <span>Tizimdan Chiqish</span>
+            </div>
+          </button>
         </div>
       </aside>
 
@@ -167,14 +220,21 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4 border-t border-slate-800 space-y-2">
           <Link
             href="/dashboard"
             onClick={() => setMobileSidebarOpen(false)}
-            className="flex items-center justify-center gap-2 w-full py-2 bg-blue-600 text-white text-xs font-bold rounded-xl"
+            className="flex items-center justify-center gap-2 w-full py-2 bg-blue-600/30 text-blue-400 text-xs font-bold rounded-xl border border-blue-500/30"
           >
-            <GraduationCap className="w-4 h-4" /> Switch to Student Portal
+            <GraduationCap className="w-4 h-4" /> Talabalar Portali
           </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center justify-center gap-2 w-full py-2 bg-rose-600/20 text-rose-400 text-xs font-bold rounded-xl border border-rose-500/30"
+          >
+            <LogOut className="w-4 h-4" /> Tizimdan Chiqish
+          </button>
         </div>
       </div>
 

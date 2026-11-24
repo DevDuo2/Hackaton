@@ -41,5 +41,10 @@ export function saveUser(newUser: UserRecord): boolean {
 
 export function findUserByEmail(email: string): UserRecord | undefined {
   const users = getAllUsers();
-  return users.find((u) => u.email.toLowerCase() === email.toLowerCase().trim());
+  const normalized = email.toLowerCase().trim();
+  return users.find((u) => 
+    u.email.toLowerCase() === normalized ||
+    (u as any).username?.toLowerCase() === normalized ||
+    (normalized === 'admin' && u.role === 'admin')
+  );
 }

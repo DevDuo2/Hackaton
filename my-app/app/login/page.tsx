@@ -154,31 +154,27 @@ export default function LoginPage() {
           </form>
 
           {/* One-click Demo Credentials */}
-          <div className="mt-6 pt-6 border-t border-slate-100">
-            <p className="text-xs text-center font-semibold text-[#64748B] mb-3">
-              Hakaton Test Rejimi (Bir klikda to'ldirish):
-            </p>
-            <div className="grid grid-cols-2 gap-2">
+          <div className="mt-6 pt-5 border-t border-slate-100">
+            <div className="flex flex-col gap-2.5">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => fillCredentials('student')}
                 icon={<UserCheck className="w-3.5 h-3.5 text-[#2563EB]" />}
-                className="text-[11px]"
+                className="w-full text-xs"
               >
-                Talaba Profili
+                Talaba Profili (Demo kirish)
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fillCredentials('admin')}
-                icon={<ShieldCheck className="w-3.5 h-3.5 text-amber-600" />}
-                className="text-[11px]"
+
+              <Link
+                href="/admin/login"
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 text-xs font-bold transition-colors shadow-sm"
               >
-                Admin Profili
-              </Button>
+                <ShieldCheck className="w-4 h-4 text-amber-400" />
+                <span>Administratorlar Boshqaruv Portali (/admin/login)</span>
+                <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
+              </Link>
             </div>
           </div>
         </Card>
