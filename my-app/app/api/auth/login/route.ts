@@ -14,8 +14,25 @@ export async function POST(request: Request) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://hackaton-xl22.onrender.com';
 
-    // Check user in database
+    // 1. First attempt to authenticate against live Render backend (MongoDB)
+    try {
+      const backendRes = await fetch(`${backendUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalizedEmail, password }),
+      });
+
+      if (backendRes.ok) {
+        const backendData = await backendRes.json();
+        return NextResponse.json(backendData);
+      }
+    } catch (e) {
+      console.warn('Render backend login failed, falling back to local users database:', e);
+    }
+
+    // 2. Fallback to local user database
     const user = findUserByEmail(normalizedEmail);
     if (!user) {
       return NextResponse.json(

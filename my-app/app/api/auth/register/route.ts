@@ -21,8 +21,25 @@ export async function POST(request: Request) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://hackaton-xl22.onrender.com';
 
-    // Check if user already exists
+    // 1. First attempt to register user directly in live Render backend (MongoDB Atlas)
+    try {
+      const backendRes = await fetch(`${backendUrl}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), email: normalizedEmail, password }),
+      });
+
+      if (backendRes.ok) {
+        const backendData = await backendRes.json();
+        return NextResponse.json(backendData);
+      }
+    } catch (e) {
+      console.warn('Render backend register failed, falling back to local storage:', e);
+    }
+
+    // 2. Fallback to local storage
     const existing = findUserByEmail(normalizedEmail);
     if (existing) {
       return NextResponse.json(
