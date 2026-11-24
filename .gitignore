@@ -1,8 +1,16 @@
-# Environment variables (NEVER commit to git)
+# Environment variables / secrets (NEVER commit to git)
 .env
 .env.local
 .env.*.local
+.env.*
 *.env
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+service-account*.json
 
 # Dependencies
 node_modules/
@@ -24,6 +32,9 @@ __pycache__/
 env/
 venv/
 ENV/
+.pytest_cache/
+.coverage
+htmlcov/
 
 # Logs
 *.log
@@ -31,8 +42,21 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Local tooling, binaries, recordings
+*.exe
+cloudflared*
+ngrok*
+*.wav
+*.pcm
+
 # OS & Editor files
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+
+# Playwright MCP artifacts
+.playwright-mcp/
+
+# Local Claude Code settings / state
+.claude/

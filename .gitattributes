@@ -1,0 +1,8 @@
+# Normalize line endings; deploy files must stay LF for Linux shells/buildpacks.
+* text=auto
+Procfile text eol=lf
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+deploy/env.template text eol=lf

@@ -1,0 +1,15 @@
+# Never ship secrets or local state in the image
+.env
+.env.*
+!.env.example
+.git
+.venv
+venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.playwright-mcp
+.claude
+tests
+docs
+m.md
