@@ -1,0 +1,21 @@
+[
+  {
+    "id": "u_student_1",
+    "name": "Zumradxon Xudoyberganova",
+    "email": "student@voxy.edu",
+    "password": "password123",
+    "role": "student",
+    "selectedSubject": "matematika",
+    "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+    "createdAt": "2026-11-24T10:00:00.000Z"
+  },
+  {
+    "id": "u_admin_1",
+    "name": "Admin Nazoratchi",
+    "email": "admin@voxy.edu",
+    "password": "admin123",
+    "role": "admin",
+    "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80",
+    "createdAt": "2026-11-24T10:00:00.000Z"
+  }
+]
