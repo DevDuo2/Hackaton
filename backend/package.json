@@ -1,0 +1,18 @@
+{
+  "name": "voxy-backend",
+  "version": "1.0.0",
+  "description": "VOXY Multi-Subject EdTech Platform Backend API",
+  "main": "run.py",
+  "scripts": {
+    "build": "pip install -r requirements.txt || python3 -m pip install -r requirements.txt",
+    "start": "uvicorn app.main:app --host 0.0.0.0 --port $PORT || python3 -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+  },
+  "keywords": [
+    "voxy",
+    "fastapi",
+    "python",
+    "gemini"
+  ],
+  "author": "Zumradxon Xudoyberganova",
+  "license": "MIT"
+}
