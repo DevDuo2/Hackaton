@@ -101,5 +101,8 @@ else { Write-Host "  mini app   : OCHILMADI" -ForegroundColor Red }
 Write-Host "  loglar     : $logDir" -ForegroundColor DarkGray
 Write-Host "─────────────────────────────────────────────" -ForegroundColor DarkGray
 Write-Host ""
-Write-Host "Telegramda @lockbridge_bot ga /start yuboring." -ForegroundColor White
+Write-Host "Telegramda @lockbridge_bot ga /start YUBORING." -ForegroundColor White
+Write-Host "ESKI xabarlardagi tugma ISHLAMAYDI: Telegram tunnel manzilini xabar
+ichiga yozib qo'yadi, u esa har ishga tushirishda o'zgaradi. Har safar /start
+yuborib, YANGI xabardagi tugmani bosing." -ForegroundColor Yellow
 Write-Host "Tunnel manzili har ishga tushirishda O'ZGARADI — bot uni o'zi oladi." -ForegroundColor DarkGray
