@@ -95,3 +95,7 @@ services:
       # Telegramdagi bot username (@ belgisisiz) — /speaking sahifasidagi havola uchun.
       - key: NEXT_PUBLIC_TELEGRAM_BOT
         value: lockbridge_bot
+      # Google Analytics o'lchov identifikatori. Maxfiy emas: u baribir
+      # brauzerga ketadi. Bo'sh bo'lsa skript ulanmaydi.
+      - key: NEXT_PUBLIC_GA_ID
+        value: G-MW6VKKQVRL

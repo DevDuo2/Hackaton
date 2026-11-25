@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Archivo, Inter_Tight, JetBrains_Mono } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 
 /**
@@ -40,6 +41,8 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
+
   return (
     // Sayt o'zbek tilida: `lang="en"` da skrinriderlar matnni ingliz
     // qoidalari bilan o'qib, tanib bo'lmaydigan talaffuz beradi.
@@ -48,6 +51,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${display.variable} ${body.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
+      {/* Google Analytics. O'lchov identifikatori env orqali beriladi: uni
+          kodga yozib qo'yish — har bir fork va har bir nusxa bitta hisobga
+          ma'lumot yuborishi degani. Qiymat bo'lmasa skript umuman
+          ulanmaydi, shuning uchun lokal ishlash statistikani ifloslantirmaydi. */}
+      {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
     </html>
   );
 }

@@ -11,6 +11,7 @@
     "check:answers": "node scripts/check-no-leaked-answers.mjs"
   },
   "dependencies": {
+    "@next/third-parties": "^16.4.6",
     "lucide-react": "^1.79.0",
     "next": "16.4.6",
     "react": "19.3.0",
