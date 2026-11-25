@@ -58,6 +58,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# start-bot.ps1 yozadigan loglar
+.run/
+
 # Playwright MCP artifacts
 .playwright-mcp/
 

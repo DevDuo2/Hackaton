@@ -154,6 +154,20 @@ If `GEMINI_API_KEY` is missing, `/api/voice/status` returns `configured: false`,
 
 ## Running locally
 
+### One command (Windows)
+
+```powershell
+.\scripts\start-bot.ps1   # tunnel + voice API + bot, prints the Mini App URL
+.\scripts\stop-bot.ps1    # stop everything before deploying
+```
+
+The tunnel address changes on every start; the script passes the new one to the
+bot, so the Mini App button always points somewhere that works. Run
+`stop-bot.ps1` before a Render deploy — two pollers make Telegram return
+`Conflict` and then neither of them answers.
+
+Manual equivalent:
+
 ```bash
 python -m venv .venv
 .venv\Scripts\activate          # Windows;  source .venv/bin/activate on macOS/Linux
