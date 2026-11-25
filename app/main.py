@@ -91,11 +91,19 @@ def _lifespan(settings: Settings):
         app.state.bot_application = None
         if settings.run_bot_in_web:
             from app.bot.embedded import start_embedded_bot, stop_embedded_bot
+            from app.services.keepalive import start_keepalive, stop_keepalive
 
             app.state.bot_application = await start_embedded_bot(settings)
+            # Bepul tarifda servis 15 daqiqa harakatsizlikdan keyin uxlaydi va
+            # bot ham u bilan o'ladi. Servis o'z ochiq manziliga ping yuborib
+            # uyg'oq qoladi — tashqi cron'ni qo'lda sozlash shart emas.
+            keepalive = start_keepalive(
+                settings.backend_url, enabled=settings.is_production
+            )
             try:
                 yield
             finally:
+                await stop_keepalive(keepalive)
                 await stop_embedded_bot(app.state.bot_application)
             return
         yield

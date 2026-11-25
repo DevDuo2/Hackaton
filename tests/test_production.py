@@ -178,3 +178,22 @@ def test_summary_uses_low_thinking_for_latency() -> None:
     from app.services import gemini
 
     assert "ThinkingLevel.LOW" in inspect.getsource(gemini.GeminiGateway.generate_json)
+
+
+def test_keepalive_only_runs_against_a_public_https_url():
+    """Lokal manzilga ping yuborishning ma'nosi yo'q — vazifa yaratilmaydi."""
+    from app.services.keepalive import _is_public_https
+
+    assert _is_public_https("https://voxy-voice.onrender.com")
+    assert not _is_public_https("http://localhost:8000")
+    assert not _is_public_https("https://localhost:8000")
+    assert not _is_public_https("http://voxy-voice.onrender.com")  # https shart
+    assert not _is_public_https("")
+
+
+def test_keepalive_is_off_outside_production():
+    """Lokalda ping kerak emas: servis uxlamaydi."""
+    from app.services.keepalive import start_keepalive
+
+    assert start_keepalive("https://voxy-voice.onrender.com", enabled=False) is None
+    assert start_keepalive("http://localhost:8000", enabled=True) is None
