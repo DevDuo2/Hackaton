@@ -51,16 +51,22 @@ def test_quiz_xp_goes_to_the_token_owner(client, student_token):
     student = next(u for u in USERS_DB if u["id"] == "u_student_1")
     before = student["totalXP"]
 
-    # To'g'ri variantning indeksi ma'lumotdan olinadi — hamma savolda 0 emas.
-    math_quiz = next(
-        q for s in SUBJECTS_DB if s["id"] == "matematika" for q in s["quizzes"] if q["id"] == 101
+    # Savol seed'da JAVOB BERILMAGANLARDAN olinadi va to'g'ri variant ham
+    # ma'lumotdan: test na aniq id ga, na "javob doim birinchi" degan
+    # tasodifga bog'lanmaydi.
+    answered = set(student.get("answeredQuizzes") or [])
+    subject, quiz = next(
+        (s, q)
+        for s in SUBJECTS_DB
+        for q in s.get("quizzes", [])
+        if q["id"] not in answered
     )
     res = client.post(
         "/api/quizzes/submit",
         json={
-            "subjectId": "matematika",
-            "questionId": 101,
-            "selectedOption": math_quiz["correctIndex"],
+            "subjectId": subject["id"],
+            "questionId": quiz["id"],
+            "selectedOption": quiz["correctIndex"],
         },
         headers=auth(student_token),
     )

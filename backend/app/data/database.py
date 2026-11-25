@@ -220,8 +220,16 @@ USERS_DB = [
         "role": "student",
         "selectedSubject": "matematika",
         "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",
-        "totalXP": 2840,
-        "streakDays": 12,
+        # Raqamlar BIR-BIRIGA MOS bo'lishi kerak. Ilgari bu yerda 2840 XP va
+        # 12 kunlik seriya turardi, javob berilgan savollar esa umuman yo'q
+        # edi — platformadagi 10 ta savolning hammasiga to'g'ri javob bersa
+        # ham ko'pi bilan 1000 XP chiqadi, ya'ni profil o'zi o'ziga zid edi.
+        # Endi: 6 ta savol (4 to'g'ri * 100 + 2 xato * 10 = 420 XP).
+        "answeredQuizzes": [101, 102, 201, 301, 401, 501],
+        "totalXP": 420,
+        # Seriya birinchi kirishda `touch_streak` tomonidan bugungi sanaga
+        # qo'yiladi va keyin o'zi o'sadi — shuning uchun 1 dan boshlanadi.
+        "streakDays": 1,
     },
     {
         "id": "u_admin_1",

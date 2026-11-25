@@ -6,6 +6,23 @@ Har bir test aniq bitta nuqsonni qaytib kelmasligini kuzatadi.
 from app.data.database import SUBJECTS_DB, USERS_DB
 from tests.conftest import auth
 
+def _unanswered_quiz() -> tuple[str, dict]:
+    """Demo talaba HALI javob bermagan savolni topadi.
+
+    Seed'dagi demo akkaunt endi bir nechta savolga javob bergan holda keladi
+    (raqamlari bir-biriga mos bo'lishi uchun). Testlar aniq bir savol id siga
+    bog'lanib qolmasligi kerak: aks holda seed o'zgarganda ular sinadi,
+    garchi tekshirayotgan xatti-harakat buzilmagan bo'lsa ham.
+    """
+    student = next(u for u in USERS_DB if u["id"] == "u_student_1")
+    answered = set(student.get("answeredQuizzes") or [])
+    for subject in SUBJECTS_DB:
+        for quiz in subject.get("quizzes", []):
+            if quiz["id"] not in answered:
+                return subject["id"], quiz
+    raise AssertionError("barcha savollarga javob berilgan — test uchun savol qolmadi")
+
+
 MATH_QUIZ = SUBJECTS_DB[0]["quizzes"][0]
 
 
@@ -86,10 +103,11 @@ def test_xp_is_awarded_only_once_per_question(client, student_token):
     before = student["totalXP"]
     # To'g'ri variant ma'lumotdan olinadi: ilgari bu yerda 0 yozilgan edi va test
     # faqat barcha savollarning javobi birinchi variant bo'lgani uchun o'tardi.
+    subject_id, quiz = _unanswered_quiz()
     body = {
-        "subjectId": "matematika",
-        "questionId": MATH_QUIZ["id"],
-        "selectedOption": MATH_QUIZ["correctIndex"],
+        "subjectId": subject_id,
+        "questionId": quiz["id"],
+        "selectedOption": quiz["correctIndex"],
     }
 
     first = client.post("/api/quizzes/submit", json=body, headers=auth(student_token))
@@ -103,7 +121,7 @@ def test_xp_is_awarded_only_once_per_question(client, student_token):
         assert again.json()["earnedXP"] == 0
         assert again.json()["alreadyAnswered"] is True
         # Javob va izoh baribir qaytadi — UI ishlashda davom etadi.
-        assert again.json()["correctIndex"] == MATH_QUIZ["correctIndex"]
+        assert again.json()["correctIndex"] == quiz["correctIndex"]
 
     assert student["totalXP"] == before + 100
 
@@ -122,7 +140,10 @@ def test_quiz_response_reports_server_side_total(client, student_token):
 def test_wrong_answer_also_counts_only_once(client, student_token):
     student = next(u for u in USERS_DB if u["id"] == "u_student_1")
     before = student["totalXP"]
-    body = {"subjectId": "kimyo", "questionId": 401, "selectedOption": 1}
+    # Javob berilmagan savol + ataylab NOTO'G'RI variant tanlanadi.
+    subject_id, quiz = _unanswered_quiz()
+    wrong = (quiz["correctIndex"] + 1) % len(quiz["options"])
+    body = {"subjectId": subject_id, "questionId": quiz["id"], "selectedOption": wrong}
 
     assert client.post("/api/quizzes/submit", json=body, headers=auth(student_token)).json()["earnedXP"] == 10
     assert client.post("/api/quizzes/submit", json=body, headers=auth(student_token)).json()["earnedXP"] == 0
@@ -226,3 +247,25 @@ def test_login_updates_the_streak(client):
     )
     assert res.status_code == 200
     assert student.get("lastActiveDate"), "kirishdan keyin lastActiveDate yozilmadi"
+
+
+def test_demo_student_stats_are_internally_consistent():
+    """Demo akkauntning raqamlari bir-biriga mos bo'lishi kerak.
+
+    Ilgari u 2840 XP va 12 kunlik seriya bilan kelar, javob berilgan savollar
+    esa bo'sh edi. Platformada jami 10 ta savol bor: hammasiga to'g'ri javob
+    berilganda ham ko'pi bilan 1000 XP chiqadi, ya'ni profil o'ziga zid edi.
+    """
+    from app.data.database import SUBJECTS_DB, USERS_DB
+
+    student = next(u for u in USERS_DB if u["id"] == "u_student_1")
+    answered = student.get("answeredQuizzes") or []
+    all_ids = {q["id"] for s in SUBJECTS_DB for q in s.get("quizzes", [])}
+
+    assert set(answered) <= all_ids, "javob berilgan savol katalogda yo'q"
+
+    # Har bir savol uchun eng ko'pi 100 XP (to'g'ri javob), eng kami 10 (xato).
+    assert 10 * len(answered) <= student["totalXP"] <= 100 * len(answered), (
+        f"{len(answered)} ta javob bilan {student['totalXP']} XP bo'lishi mumkin emas"
+    )
+    assert student["totalXP"] <= 100 * len(all_ids), "XP butun katalog imkoniyatidan oshib ketdi"
