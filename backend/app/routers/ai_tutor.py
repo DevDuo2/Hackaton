@@ -6,7 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from app.models.schemas import AIChatRequest, AIChatResponse
 from app.core.database import get_database
 from app.core.ratelimit import ai_limiter
+from app.core.billing import plan_for, record_ai_message, remaining_ai_messages
 from app.core.security import get_current_user
+from app.core.users import find_user_by_id
 from app.data.database import SUBJECTS_DB
 
 logger = logging.getLogger(__name__)
@@ -52,6 +54,28 @@ async def ask_ai_tutor(
     question = payload.question.strip()
     if not question:
         raise HTTPException(status_code=422, detail="Savol bo'sh bo'lmasligi kerak.")
+
+    # Obuna chekloviga SERVERDA qaraladi. UI dagi tekshiruv himoya emas:
+    # kimdir to'g'ridan-to'g'ri /api/ai/chat ga murojaat qilsa, kunlik limit
+    # baribir ishlashi kerak — aks holda reja shunchaki bezak bo'lib qoladi.
+    user = await find_user_by_id(claims["sub"])
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sessiya endi yaroqsiz. Iltimos, qaytadan kiring.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    plan = plan_for(user)
+    left = remaining_ai_messages(user)
+    if left is not None and left <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail=(
+                f"Bugungi {plan['aiMessagesPerDay']} ta savol limiti tugadi. "
+                "Ertaga yangilanadi yoki Pro rejaga o'ting."
+            ),
+        )
 
     db = get_database()
     sub = None
@@ -157,9 +181,14 @@ async def ask_ai_tutor(
         except Exception as e:
             logger.warning("AI suhbatini jurnalga yozib bo'lmadi: %s", e)
 
+    # Hisob javob TAYYOR bo'lgandan keyin oshiriladi: xato yuz bersa,
+    # foydalanuvchining kunlik limiti behuda sarflanmaydi.
+    await record_ai_message(user)
+
     return AIChatResponse(
         subjectId=payload.subjectId,
         response=ai_text,
         suggestedTopics=sub.get("sampleQuestions", []),
         source="gemini" if from_gemini else "offline",
+        messagesLeftToday=remaining_ai_messages(user),
     )

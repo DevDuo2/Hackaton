@@ -17,10 +17,9 @@ export const Footer = () => {
               </span>
             </div>
             <p className="text-sm text-[#64748B] max-w-sm leading-relaxed">
-              Learn smarter. Grow faster. The modern AI-powered learning platform designed for students, developers, and ambitious creators worldwide.
+              Telegram ichida jonli ovozda javob beradigan AI murabbiy. Yetti fan bo&apos;yicha testlar, XP va reyting.
             </p>
             <div className="text-xs text-[#64748B]">
-              Official Brand Palette: #2563EB Blue & #8B5CF6 Purple
             </div>
           </div>
 
@@ -32,22 +31,27 @@ export const Footer = () => {
             <ul className="space-y-2.5 text-sm text-[#64748B]">
               <li>
                 <Link href="/courses" className="hover:text-[#2563EB] transition-colors">
-                  All Courses
+                  Kurslar katalogi
                 </Link>
               </li>
               <li>
                 <Link href="/ai-tutor" className="hover:text-[#8B5CF6] transition-colors">
-                  AI Personal Tutor
+                  AI murabbiy
                 </Link>
               </li>
               <li>
                 <Link href="/speaking" className="hover:text-[#8B5CF6] transition-colors">
-                  English Speaking AI
+                  Ovozli muloqot
                 </Link>
               </li>
               <li>
                 <Link href="/games" className="hover:text-[#2563EB] transition-colors">
-                  Interactive Quizzes
+                  Testlar
+                </Link>
+              </li>
+              <li>
+                <Link href="/pricing" className="hover:text-[#2563EB] transition-colors">
+                  Narxlar
                 </Link>
               </li>
             </ul>
@@ -61,17 +65,17 @@ export const Footer = () => {
             <ul className="space-y-2.5 text-sm text-[#64748B]">
               <li>
                 <Link href="/dashboard" className="hover:text-[#2563EB] transition-colors">
-                  Student Dashboard
+                  Dashboard
                 </Link>
               </li>
               <li>
                 <Link href="/progress" className="hover:text-[#2563EB] transition-colors">
-                  My Progress & Stats
+                  Natijalarim
                 </Link>
               </li>
               <li>
                 <Link href="/profile" className="hover:text-[#2563EB] transition-colors">
-                  Student Profile
+                  Profil
                 </Link>
               </li>
 
@@ -86,7 +90,7 @@ export const Footer = () => {
             <ul className="space-y-2.5 text-sm text-[#64748B]">
               <li>
                 <Link href="/#about" className="hover:text-[#2563EB] transition-colors">
-                  About VOXY
+                  VOXY haqida
                 </Link>
               </li>
               {/* FAQ bo'limi hali yozilmagan: havola `/#faq` ga olib borardi,
@@ -96,18 +100,18 @@ export const Footer = () => {
                 <span className="text-slate-400">FAQ (Demo)</span>
               </li>
               <li>
-                <span className="text-slate-400">Privacy Policy (Demo)</span>
+                <span className="text-slate-400">Maxfiylik siyosati (demo)</span>
               </li>
               <li>
-                <span className="text-slate-400">Terms of Service</span>
+                <span className="text-slate-400">Foydalanish shartlari (demo)</span>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-[#64748B] gap-4">
-          <p>© 2026 VOXY EdTech Inc. All rights reserved.</p>
-          <p>Crafted with Next.js, TypeScript & Tailwind CSS for Hackathon.</p>
+          <p>© 2026 VOXY. Barcha huquqlar himoyalangan.</p>
+          <p>Next.js, FastAPI va Gemini asosida qurilgan.</p>
         </div>
       </div>
     </footer>

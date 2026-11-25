@@ -64,6 +64,8 @@ class AIChatResponse(BaseModel):
     # "gemini" — haqiqiy model javobi; "offline" — serverdagi zaxira bilim bazasi.
     # Foydalanuvchi oldindan yozilgan matnni AI javobi deb o'ylamasligi uchun kerak.
     source: Literal["gemini", "offline"] = "offline"
+    # Bugungi obuna limitidan qolgani; cheksiz rejada None.
+    messagesLeftToday: Optional[int] = None
 
 
 class QuizAnswerSubmit(BaseModel):
@@ -100,3 +102,9 @@ class PlatformSettingsRequest(BaseModel):
     platformName: Optional[str] = Field(default=None, min_length=1, max_length=120)
     allowRegistration: Optional[bool] = None
     maintenanceMode: Optional[bool] = None
+
+
+class SubscribeRequest(BaseModel):
+    """Qaysi rejaga o'tilmoqchi. Haqiqiy ro'yxat `app/core/billing.py` da."""
+
+    plan: str = Field(min_length=1, max_length=32)

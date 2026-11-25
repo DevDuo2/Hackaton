@@ -94,14 +94,17 @@ export default function ProgressPage() {
     Promise.all([fetchMe(), fetchLeaderboard()])
       .then(([me, board]) => {
         if (cancelled) return;
-        const index = board.leaderboard.findIndex((u) => u.id === me.user.id);
+        // Dashboard bilan bir xil qoida: o'rin va umumiy son faqat talabalar
+        // bo'yicha, admin akkaunti hisobga olinmaydi.
+        const students = board.leaderboard.filter((u) => u.role !== 'admin');
+        const index = students.findIndex((u) => u.id === me.user.id);
         setLive({
           totalXP: me.user.totalXP ?? 0,
           streakDays: me.user.streakDays ?? 0,
           progress:
             me.progress ?? { answeredCount: 0, totalQuestions: 0, bySubject: [] },
           rank: index >= 0 ? index + 1 : null,
-          totalStudents: board.leaderboard.length,
+          totalStudents: students.length,
         });
       })
       .catch(() => {

@@ -1,27 +1,51 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Archivo, Inter_Tight, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+/**
+ * Uch rolli tipografika.
+ *
+ * Ilgari Geist ulangan edi, lekin `globals.css` dagi `body` Arial ga
+ * qaytarardi — ya'ni butun sayt tizim shriftida chiqardi va shuning uchun
+ * «hech kim bezamagandek» ko'rinardi.
+ *
+ * - Archivo — sarlavhalar uchun: kengaytirilgan, qat'iy grotesk.
+ * - Inter Tight — matn uchun: zich, o'zbek diakritikasi (oʻ, gʻ) to'liq.
+ * - JetBrains Mono — raqamlar uchun: XP, narx, vaqt. Jadvalda raqamlar
+ *   bir xil kenglikda turadi.
+ */
+const display = Archivo({
+  variable: "--font-display",
+  subsets: ["latin", "latin-ext"],
+  weight: ["600", "700", "800"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const body = Inter_Tight({
+  variable: "--font-body",
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+});
+
+const mono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "VOXY — AI-Powered Learning Platform",
-  description: "Learn smarter. Grow faster. Personalized AI tutoring, speaking coach, and interactive courses for ambitious students.",
+  title: "VOXY — ovozli AI murabbiy",
+  description:
+    "Telegram ichida AI murabbiy bilan jonli ovozda gaplashing, fanlar bo'yicha test yeching va natijangizni kuzating.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
+    // Sayt o'zbek tilida: `lang="en"` da skrinriderlar matnni ingliz
+    // qoidalari bilan o'qib, tanib bo'lmaydigan talaffuz beradi.
     <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      lang="uz"
+      className={`${display.variable} ${body.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

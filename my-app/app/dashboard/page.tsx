@@ -48,16 +48,18 @@ export default function DashboardPage() {
     Promise.all([fetchMe(), fetchLeaderboard(), fetchSubjects()])
       .then(([me, board, catalogue]) => {
         if (cancelled) return;
-        const sorted = board.leaderboard;
-        const index = sorted.findIndex((u) => u.id === me.user.id);
+        // O'rin ham, umumiy son ham FAQAT talabalar bo'yicha hisoblanadi.
+        // Ilgari o'rin butun reyting bo'yicha (admin ham ichida) olinar,
+        // son esa adminsiz chiqarilardi — ekranda «#7 / 6 talaba» kabi
+        // o'zi o'ziga zid natija paydo bo'lardi.
+        const students = board.leaderboard.filter((u) => u.role !== 'admin');
+        const index = students.findIndex((u) => u.id === me.user.id);
         setLive({
           totalXP: me.user.totalXP ?? 0,
           streakDays: me.user.streakDays ?? 0,
           answeredCount: me.user.answeredCount ?? 0,
           rank: index >= 0 ? index + 1 : null,
-          // Admin akkaunti talaba emas: ilgari u ham hisobga tushar va
-          // yakka talaba «#1 / 2 talaba» deb ko'rsatilardi.
-          totalStudents: sorted.filter((u) => u.role !== 'admin').length,
+          totalStudents: students.length,
           quizCount: catalogue.subjects.reduce((sum, s) => sum + (s.quizCount ?? 0), 0),
         });
       })

@@ -16,18 +16,18 @@ export const Navbar = () => {
   const isLoggedIn = session !== null;
 
   return (
-    <header className="sticky top-0 z-50 bg-white/85 backdrop-blur-md border-b border-slate-100">
+    <header className="sticky top-0 z-50 bg-[#F2F3F0]/90 backdrop-blur-md border-b border-[#D9DDD7]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#2563EB] to-[#8B5CF6] flex items-center justify-center text-white font-extrabold text-xl shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
+          <div className="w-10 h-10 rounded-xl bg-[#0F2027] flex items-center justify-center text-[#E0A42B] font-extrabold text-xl group-hover:scale-105 transition-transform">
             V
           </div>
           <div className="flex flex-col">
-            <span className="text-xl font-bold tracking-tight text-[#1E293B] leading-none">
+            <span className="font-display text-xl font-extrabold tracking-tight text-[#0F2027] leading-none">
               VOXY
             </span>
-            <span className="text-[10px] text-[#64748B] tracking-wider uppercase font-medium">
+            <span className="font-mono text-[10px] text-[#7A8A92] tracking-wider uppercase">
               AI Learning
             </span>
           </div>
@@ -39,30 +39,36 @@ export const Navbar = () => {
         <nav className="hidden lg:flex items-center gap-1 lg:gap-2">
           <Link
             href="/"
-            className="px-3.5 py-2 text-sm font-medium text-[#1E293B] hover:text-[#2563EB] rounded-lg transition-colors"
+            className="px-3.5 py-2 text-sm font-medium text-[#0F2027] hover:text-[#17827E] rounded-lg transition-colors"
           >
             Bosh Sahifa
           </Link>
           <Link
             href="/courses"
-            className="px-3.5 py-2 text-sm font-medium text-[#64748B] hover:text-[#2563EB] rounded-lg transition-colors flex items-center gap-1.5"
+            className="px-3.5 py-2 text-sm font-medium text-[#556B76] hover:text-[#17827E] rounded-lg transition-colors flex items-center gap-1.5"
           >
-            <BookOpen className="w-4 h-4 text-slate-400" />
+            <BookOpen className="w-4 h-4 text-[#7A8A92]" />
             Fanlar & Kurslar
           </Link>
           <Link
             href="/ai-tutor"
-            className="px-3.5 py-2 text-sm font-medium text-[#8B5CF6] hover:text-[#7C3AED] rounded-lg transition-colors flex items-center gap-1.5 bg-purple-50/60 hover:bg-purple-50"
+            className="px-3.5 py-2 text-sm font-semibold text-[#17827E] hover:text-[#0F2027] rounded-lg transition-colors flex items-center gap-1.5"
           >
-            <Sparkles className="w-4 h-4 text-[#8B5CF6]" />
+            <Sparkles className="w-4 h-4 text-[#17827E]" />
             AI Murabbiy
           </Link>
           <Link
             href="/games"
-            className="px-3.5 py-2 text-sm font-medium text-[#64748B] hover:text-[#2563EB] rounded-lg transition-colors flex items-center gap-1.5"
+            className="px-3.5 py-2 text-sm font-medium text-[#556B76] hover:text-[#17827E] rounded-lg transition-colors flex items-center gap-1.5"
           >
-            <Trophy className="w-4 h-4 text-slate-400" />
+            <Trophy className="w-4 h-4 text-[#7A8A92]" />
             Sinov Testlari
+          </Link>
+          <Link
+            href="/pricing"
+            className="px-3.5 py-2 text-sm font-medium text-[#556B76] hover:text-[#17827E] rounded-lg transition-colors"
+          >
+            Narxlar
           </Link>
         </nav>
 
@@ -70,7 +76,12 @@ export const Navbar = () => {
         <div className="hidden lg:flex items-center gap-3">
           {isLoggedIn ? (
             <Link href="/dashboard">
-              <Button variant="primary" size="sm" icon={<LayoutDashboard className="w-4 h-4" />}>
+              <Button
+                variant="primary"
+                size="sm"
+                icon={<LayoutDashboard className="w-4 h-4" />}
+                className="bg-[#0F2027] hover:bg-[#1A3340] text-white border-0 shadow-none"
+              >
                 Dashboard
               </Button>
             </Link>
@@ -82,7 +93,12 @@ export const Navbar = () => {
                 </Button>
               </Link>
               <Link href="/register">
-                <Button variant="primary" size="sm" icon={<UserPlus className="w-4 h-4" />}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={<UserPlus className="w-4 h-4" />}
+                  className="bg-[#E0A42B] hover:bg-[#EFB748] text-[#0F2027] border-0 shadow-none"
+                >
                   Ro&apos;yxatdan O&apos;tish
                 </Button>
               </Link>
@@ -132,6 +148,13 @@ export const Navbar = () => {
             className="block px-3 py-2 rounded-lg text-base font-medium text-slate-600 hover:bg-slate-50"
           >
             🏆 Sinov Testlari
+          </Link>
+          <Link
+            href="/pricing"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-3 py-2 rounded-lg text-base font-medium text-slate-600 hover:bg-slate-50"
+          >
+            Narxlar
           </Link>
           <div className="pt-4 flex flex-col gap-2 border-t border-slate-100">
             {isLoggedIn ? (

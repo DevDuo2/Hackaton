@@ -8,7 +8,14 @@ import {
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { ApiError, fetchMe, updateProfileApi } from '../../lib/api';
+import Link from 'next/link';
+import {
+  ApiError,
+  fetchMe,
+  fetchSubscription,
+  updateProfileApi,
+  type SubscriptionState,
+} from '../../lib/api';
 import { getSession, getToken, saveSession, type UserSession } from '../../lib/auth';
 import { useSession } from '../../lib/clientStore';
 
@@ -19,6 +26,8 @@ interface ProfileFields {
 }
 
 export default function SettingsPage() {
+  // Obuna holati: UI uni ko'rsatadi, boshqaruv esa /pricing da.
+  const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
   // Uch qatlam: sessiya (darhol) -> serverdan kelgan profil -> foydalanuvchi tahriri.
   // Shu tartib tufayli effekt ichida setState qilish kerak emas.
   const session = useSession();
@@ -38,6 +47,18 @@ export default function SettingsPage() {
   const setLanguage = (value: string) => setDraft((prev) => ({ ...prev, language: value }));
   const setNotifications = (value: boolean) =>
     setDraft((prev) => ({ ...prev, notifications: value }));
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSubscription()
+      .then(({ subscription: state }) => !cancelled && setSubscription(state))
+      .catch(() => {
+        /* Obuna holati ko'rinmasa ham sozlamalar ishlashda davom etadi. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,21 +121,53 @@ export default function SettingsPage() {
       <div className="max-w-4xl mx-auto space-y-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1E293B]">
-            Platform Settings
+            Sozlamalar
           </h1>
           <p className="text-sm text-[#64748B] mt-1">
-            Manage your personal profile, notification preferences, and learning parameters.
+            Profil ma&apos;lumotlari, bildirishnomalar va obuna rejangiz.
           </p>
         </div>
+
+        {/* Obuna — joriy reja va bugungi limit. Boshqarish narxlar sahifasida. */}
+        <Card className="p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <h2 className="font-bold text-sm text-[#1E293B]">Obuna rejasi</h2>
+              {subscription === null ? (
+                <p className="text-xs text-[#64748B] mt-1">Yuklanmoqda...</p>
+              ) : (
+                <>
+                  <p className="text-lg font-black text-[#1E293B] mt-1">
+                    {subscription.planName}
+                  </p>
+                  <p className="text-xs text-[#64748B] mt-0.5">
+                    {subscription.aiMessagesLeftToday === null
+                      ? 'Cheksiz AI savollar'
+                      : `Bugun yana ${subscription.aiMessagesLeftToday} ta AI savol`}
+                    {subscription.expiresAt
+                      ? ` · amal qiladi ${subscription.expiresAt.slice(0, 10)}`
+                      : ''}
+                  </p>
+                </>
+              )}
+            </div>
+            <Link
+              href="/pricing"
+              className="rounded-xl bg-[#0F2027] text-white text-xs font-bold px-4 py-2.5 hover:bg-[#1A3340] transition-colors shrink-0"
+            >
+              Rejalarni ko&apos;rish
+            </Link>
+          </div>
+        </Card>
 
         <form onSubmit={handleSave} className="space-y-6">
           {/* Account Details */}
           <Card className="p-6 space-y-4">
-            <h3 className="font-bold text-base text-[#1E293B]">Account Information</h3>
+            <h3 className="font-bold text-base text-[#1E293B]">Hisob ma&apos;lumotlari</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-[#1E293B] mb-1.5">
-                  Display Name
+                  Ism
                 </label>
                 <input
                   type="text"
@@ -126,7 +179,7 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-[#1E293B] mb-1.5">
-                  Email Address
+                  Email manzil
                 </label>
                 <input
                   type="email"
@@ -142,14 +195,14 @@ export default function SettingsPage() {
             </div>
           </Card>
 
-          {/* Preferences */}
+          {/* Afzalliklar */}
           <Card className="p-6 space-y-4">
-            <h3 className="font-bold text-base text-[#1E293B]">Preferences</h3>
+            <h3 className="font-bold text-base text-[#1E293B]">Afzalliklar</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div>
-                  <h4 className="text-sm font-semibold text-[#1E293B]">Platform Language</h4>
-                  <p className="text-xs text-[#64748B]">Select the default interface language</p>
+                  <h4 className="text-sm font-semibold text-[#1E293B]">Interfeys tili</h4>
+                  <p className="text-xs text-[#64748B]">Sayt qaysi tilda ko&apos;rinishini tanlang</p>
                 </div>
                 <select
                   value={language}
@@ -164,8 +217,8 @@ export default function SettingsPage() {
 
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div>
-                  <h4 className="text-sm font-semibold text-[#1E293B]">Daily Study Reminders</h4>
-                  <p className="text-xs text-[#64748B]">Receive motivational streak notifications</p>
+                  <h4 className="text-sm font-semibold text-[#1E293B]">Kunlik eslatmalar</h4>
+                  <p className="text-xs text-[#64748B]">Faollik seriyasini uzmaslik uchun eslatma olish</p>
                 </div>
                 <input
                   type="checkbox"
@@ -177,11 +230,11 @@ export default function SettingsPage() {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-semibold text-[#1E293B]">Theme Mode</h4>
-                  <p className="text-xs text-[#64748B]">Default: Light Mode (Dark mode ready for Phase 2)</p>
+                  <h4 className="text-sm font-semibold text-[#1E293B]">Ko&apos;rinish</h4>
+                  <p className="text-xs text-[#64748B]">Hozircha faqat yorug&apos; ko&apos;rinish</p>
                 </div>
                 <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-[#64748B] rounded-lg">
-                  Light Theme Active
+                  Yorug&apos; ko&apos;rinish
                 </span>
               </div>
             </div>
@@ -200,7 +253,7 @@ export default function SettingsPage() {
                 )
               }
             >
-              {isSaving ? 'Saqlanmoqda...' : 'Save Changes'}
+              {isSaving ? 'Saqlanmoqda...' : 'Saqlash'}
             </Button>
             {saved && (
               <span className="text-xs font-semibold text-emerald-600 animate-fade-in">

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Send,
@@ -56,6 +57,10 @@ export default function AITutorPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [aiConfigured, setAiConfigured] = useState<boolean | null>(null);
+  // Obuna limitidan bugun qolgani. null = cheksiz yoki hali noma'lum.
+  const [messagesLeft, setMessagesLeft] = useState<number | null>(null);
+  // Limit tugaganda — narxlar sahifasiga yo'naltiruvchi xabar.
+  const [limitReached, setLimitReached] = useState(false);
   const nextId = useMessageId();
 
   // AI haqiqatan ulanganmi? Ulanmagan bo'lsa, foydalanuvchi oldindan
@@ -122,11 +127,29 @@ export default function AITutorPage() {
         isOffline: reply.source === 'offline',
       };
       setMessages((prev) => [...prev, aiMsg]);
+      setMessagesLeft(reply.messagesLeftToday ?? null);
     } catch (err) {
       // Soxta "AI javobi" ko'rsatmaymiz: backend javob bermasa, buni ochiq aytamiz.
       // Gemini ishlamay qolsa, backendning o'zida zaxira bilim bazasi bor.
       if (err instanceof ApiError && err.status === 401) {
         router.replace('/login');
+        return;
+      }
+      // 402 — bu server xatosi emas, kunlik limit tugagani. Foydalanuvchiga
+      // «server javob bermadi» deb aytish yolg'on bo'lardi.
+      if (err instanceof ApiError && err.status === 402) {
+        setLimitReached(true);
+        setMessagesLeft(0);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: nextId(),
+            sender: 'ai',
+            text: err.message,
+            timestamp: clockLabel(),
+            isError: true,
+          },
+        ]);
         return;
       }
       const retryHint = 'Bir necha soniyadan keyin savolni qaytadan yuboring.';
@@ -217,6 +240,29 @@ export default function AITutorPage() {
           <Card className="lg:col-span-3 flex flex-col h-[600px] overflow-hidden">
             {/* AI ulanmagan bo'lsa buni ochiq aytamiz: javoblar serverdagi
                 ma'lumotnomadan keladi va bu «AI javobi» emas. */}
+            {limitReached && (
+              <div className="px-5 py-3 bg-[#0F2027] text-white text-[12px] font-semibold flex flex-wrap items-center justify-between gap-3">
+                <span>
+                  Bugungi bepul savollar tugadi. Ertaga yangilanadi.
+                </span>
+                <Link
+                  href="/pricing"
+                  className="rounded-lg bg-[#E0A42B] text-[#0F2027] px-3 py-1.5 font-bold hover:bg-[#EFB748] transition-colors"
+                >
+                  Rejani oshirish
+                </Link>
+              </div>
+            )}
+
+            {!limitReached && messagesLeft !== null && messagesLeft <= 3 && (
+              <div className="px-5 py-2.5 bg-amber-50 border-b border-amber-200 text-[11px] font-semibold text-amber-900">
+                Bugun yana {messagesLeft} ta savol qoldi.{' '}
+                <Link href="/pricing" className="underline underline-offset-2">
+                  Rejalar
+                </Link>
+              </div>
+            )}
+
             {aiConfigured === false && (
               <div className="px-5 py-3 bg-amber-50 border-b border-amber-200 text-[11px] text-amber-900 font-semibold flex items-start gap-2">
                 <span aria-hidden="true">⚠️</span>

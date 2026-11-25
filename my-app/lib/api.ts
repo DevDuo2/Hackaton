@@ -59,6 +59,8 @@ export interface AIChatResponse {
   suggestedTopics: string[];
   /** "gemini" — haqiqiy model javobi, "offline" — serverdagi zaxira bilim bazasi. */
   source: 'gemini' | 'offline';
+  /** Bugungi obuna limitidan qolgani; cheksiz rejada null. */
+  messagesLeftToday?: number | null;
 }
 
 export function askAiTutorApi(
@@ -290,4 +292,56 @@ export interface AdminQuizQuestion {
  */
 export function fetchAdminQuizzes(): Promise<{ questions: AdminQuizQuestion[] }> {
   return apiRequest<{ questions: AdminQuizQuestion[] }>('/api/admin/quizzes');
+}
+
+export interface Plan {
+  id: string;
+  name: string;
+  priceUzs: number;
+  period: string;
+  tagline: string;
+  /** 0 = cheksiz. */
+  aiMessagesPerDay: number;
+  voiceEnabled: boolean;
+  features: string[];
+}
+
+export interface SubscriptionState {
+  plan: string;
+  planName: string;
+  voiceEnabled: boolean;
+  aiMessagesPerDay: number;
+  aiMessagesUsedToday: number;
+  /** Cheksiz rejada null. */
+  aiMessagesLeftToday: number | null;
+  expiresAt: string | null;
+  startedAt: string | null;
+  /** "demo" — haqiqiy to'lov tizimi hali ulanmagan. */
+  paymentProvider: string;
+}
+
+/** Ochiq: narxlar sahifasi kirmasdan ham ko'rinadi. */
+export function fetchPlans(): Promise<{ plans: Plan[]; paymentProvider: string }> {
+  return apiRequest<{ plans: Plan[]; paymentProvider: string }>('/api/billing/plans');
+}
+
+export function fetchSubscription(): Promise<{ subscription: SubscriptionState }> {
+  return apiRequest<{ subscription: SubscriptionState }>('/api/billing/me');
+}
+
+export function subscribeToPlan(
+  plan: string
+): Promise<{ success: boolean; subscription: SubscriptionState; message: string }> {
+  return apiRequest('/api/billing/subscribe', {
+    method: 'POST',
+    body: JSON.stringify({ plan }),
+  });
+}
+
+export function cancelSubscription(): Promise<{
+  success: boolean;
+  subscription: SubscriptionState;
+  message: string;
+}> {
+  return apiRequest('/api/billing/cancel', { method: 'POST' });
 }

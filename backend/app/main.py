@@ -12,6 +12,7 @@ from app.routers import (
     admin,
     ai_tutor,
     auth,
+    billing,
     courses,
     quizzes,
     subjects,
@@ -46,11 +47,11 @@ app = FastAPI(
 # CORS: aniq ro'yxat + Render/Vercel preview manzillari uchun regex.
 # `allow_origins=["*"]` ataylab qo'llanmaydi — allow_credentials=True bilan
 # brauzerlar uni rad etadi va hech qanday himoya bermaydi.
-logger.info("CORS origins: %s (+regex %s)", settings.cors_origins, PREVIEW_ORIGIN_REGEX)
+logger.info("CORS origins: %s (+regex %s)", settings.cors_origins, settings.cors_origin_regex)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
-    allow_origin_regex=PREVIEW_ORIGIN_REGEX,
+    allow_origin_regex=settings.cors_origin_regex,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
@@ -64,6 +65,7 @@ app.include_router(ai_tutor.router)
 app.include_router(quizzes.router)
 app.include_router(telegram.router)
 app.include_router(admin.router)
+app.include_router(billing.router)
 
 
 @app.get("/", tags=["Health Check"])

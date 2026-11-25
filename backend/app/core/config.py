@@ -19,6 +19,13 @@ _DEFAULT_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
 # Render / Vercel preview manzillari oldindan ma'lum emas, shuning uchun regex.
 PREVIEW_ORIGIN_REGEX = r"https://[a-zA-Z0-9-]+\.(onrender\.com|vercel\.app)"
 
+# Lokalda frontend porti oldindan ma'lum emas: `next dev` 3000 band bo'lsa
+# 3001, 3100 ... ga o'tib ketadi. Ro'yxatda esa faqat 3000 turardi, natijada
+# brauzerdan boradigan HAR BIR so'rov (dashboard, reyting, fanlar) CORS bilan
+# bloklanardi — login ishlagani uchun buni sezish qiyin edi: u Next proksisi
+# orqali server tomonidan ketadi va CORS ga umuman tushmaydi.
+_LOCALHOST_ORIGIN_REGEX = r"http://(localhost|127\.0\.0\.1):\d+"
+
 
 class Settings:
     PROJECT_NAME: str = "VOXY AI Learning Platform"
@@ -46,6 +53,17 @@ class Settings:
         raw = os.getenv("CORS_ORIGINS", "")
         configured = [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
         return configured or list(_DEFAULT_ORIGINS)
+
+    @property
+    def cors_origin_regex(self) -> str:
+        """Ro'yxatga qo'shimcha: preview manzillari va (faqat lokalda) har qanday port.
+
+        Productionda kengaytma qo'shilmaydi — u yerda faqat aniq ro'yxat va
+        Render/Vercel preview manzillari qoladi.
+        """
+        if self.is_production:
+            return PREVIEW_ORIGIN_REGEX
+        return f"({PREVIEW_ORIGIN_REGEX}|{_LOCALHOST_ORIGIN_REGEX})"
 
 
 settings = Settings()
