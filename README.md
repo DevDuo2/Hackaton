@@ -2,7 +2,7 @@
 
 An educational platform with a Telegram Mini App and a real-time AI voice tutor.
 
-> **Status: Stage 4 (ready to deploy, not deployed yet).** The bot, the Mini App and the voice tutor on Gemini Live are implemented. What has been checked with a real Gemini key: `check_gemini.py` passes, and recorded speech went from the Mini App in a browser to Gemini and the tutor's audio came back and played. One real Telegram session shows audio both ways in the server log. **Not confirmed yet:** that the voice is heard on a phone (a person has to confirm), separate tests on iOS and Android, a deployed server, and a real session ending with a real summary after the fallback fix. Details are in "What is verified" below.
+> **Status: ready to deploy, not deployed yet.** The bot, the Mini App and the voice tutor on Gemini Live are implemented and have been used end to end: a person opened the Mini App from the bot on a real device, spoke to the tutor and heard it answer. `check_gemini.py` reaches `gemini-3.8-live` and gets audio back. The site (register, login, quizzes, progress, admin, subscription) was walked in a browser at 1440px and 375px against MongoDB Atlas. **Not confirmed yet:** a deployed server, separate iOS and Android passes, and a real session ending with a real summary. Note that roughly one Live session in four returned a transcript but no audio during testing; starting the session again recovered it. Details are in "What is verified" below.
 
 ## Scope and ownership
 
