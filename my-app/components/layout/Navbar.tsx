@@ -4,9 +4,16 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Sparkles, Menu, X, BookOpen, Trophy, LayoutDashboard, UserPlus } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { useSession } from '../../lib/clientStore';
 
 export const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Navbar sessiyani biladi. Ilgari «Dashboard» tugmasi hammaga ko'rinardi:
+  // kirmagan odam uni bosib, himoyalangan sahifada bir lahza spinner ko'rar va
+  // login ekraniga uloqtirilardi — «bosh sahifa darhol dashboardga o'tib
+  // ketyapti» degan tuyg'u aynan shundan edi.
+  const session = useSession();
+  const isLoggedIn = session !== null;
 
   return (
     <header className="sticky top-0 z-50 bg-white/85 backdrop-blur-md border-b border-slate-100">
@@ -27,7 +34,9 @@ export const Navbar = () => {
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+        {/* 768px da logo + 4 havola + 3 tugma sig'masdi (gorizontal scroll).
+            To'liq menyu endi lg: dan, undan kichik ekranlarda — drawer. */}
+        <nav className="hidden lg:flex items-center gap-1 lg:gap-2">
           <Link
             href="/"
             className="px-3.5 py-2 text-sm font-medium text-[#1E293B] hover:text-[#2563EB] rounded-lg transition-colors"
@@ -58,26 +67,31 @@ export const Navbar = () => {
         </nav>
 
         {/* Desktop Auth Buttons */}
-        <div className="hidden md:flex items-center gap-3">
-          <Link href="/login">
-            <Button variant="ghost" size="sm">
-              Kirish
-            </Button>
-          </Link>
-          <Link href="/register">
-            <Button variant="outline" size="sm" icon={<UserPlus className="w-4 h-4" />}>
-              Ro'yxatdan O'tish
-            </Button>
-          </Link>
-          <Link href="/dashboard">
-            <Button variant="primary" size="sm" icon={<LayoutDashboard className="w-4 h-4" />}>
-              Dashboard
-            </Button>
-          </Link>
+        <div className="hidden lg:flex items-center gap-3">
+          {isLoggedIn ? (
+            <Link href="/dashboard">
+              <Button variant="primary" size="sm" icon={<LayoutDashboard className="w-4 h-4" />}>
+                Dashboard
+              </Button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/login">
+                <Button variant="ghost" size="sm">
+                  Kirish
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button variant="primary" size="sm" icon={<UserPlus className="w-4 h-4" />}>
+                  Ro&apos;yxatdan O&apos;tish
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile menu trigger */}
-        <div className="md:hidden flex items-center">
+        <div className="lg:hidden flex items-center">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -90,7 +104,7 @@ export const Navbar = () => {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-100 bg-white px-4 pt-3 pb-6 space-y-2 shadow-xl">
+        <div className="lg:hidden border-t border-slate-100 bg-white px-4 pt-3 pb-6 space-y-2 shadow-xl">
           <Link
             href="/"
             onClick={() => setMobileMenuOpen(false)}
@@ -120,21 +134,26 @@ export const Navbar = () => {
             🏆 Sinov Testlari
           </Link>
           <div className="pt-4 flex flex-col gap-2 border-t border-slate-100">
-            <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-              <Button variant="outline" className="w-full">
-                Kirish
-              </Button>
-            </Link>
-            <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
-              <Button variant="secondary" className="w-full">
-                Yangi Ro'yxatdan O'tish
-              </Button>
-            </Link>
-            <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-              <Button variant="primary" className="w-full">
-                Dashboard
-              </Button>
-            </Link>
+            {isLoggedIn ? (
+              <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="primary" className="w-full">
+                  Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="outline" className="w-full">
+                    Kirish
+                  </Button>
+                </Link>
+                <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="primary" className="w-full">
+                    Yangi Ro&apos;yxatdan O&apos;tish
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { saveSession } from '../../lib/auth';
 import { Lock, Mail, ArrowRight, ShieldCheck, UserCheck, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -34,11 +35,8 @@ export default function LoginPage() {
         return;
       }
 
-      // Save user session in localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('voxy_auth_user', JSON.stringify(data.user));
-        localStorage.setItem('voxy_auth_token', data.user.token);
-      }
+      // Token javobning yuqori darajasida keladi (`data.token`), `data.user` ichida emas.
+      saveSession(data.user, data.token);
 
       // Role-based routing
       if (data.user.role === 'admin') {
@@ -51,7 +49,7 @@ export default function LoginPage() {
           router.push('/onboarding');
         }
       }
-    } catch (err) {
+    } catch {
       setErrorMessage('Server bilan bog\'lanishda xatolik yuz berdi');
     } finally {
       setIsLoading(false);
@@ -80,7 +78,7 @@ export default function LoginPage() {
         </Link>
         <h2 className="text-2xl font-extrabold text-[#1E293B]">Tizimga Kirish</h2>
         <p className="mt-2 text-sm text-[#64748B]">
-          Shaxsiy ta'lim profilingizga kiring
+          Shaxsiy ta&apos;lim profilingizga kiring
         </p>
       </div>
 
@@ -180,7 +178,7 @@ export default function LoginPage() {
         </Card>
 
         <p className="text-center text-xs text-[#64748B] mt-6">
-          Profilingiz yo'qmi?{' '}
+          Profilingiz yo&apos;qmi?{' '}
           <Link href="/register" className="font-semibold text-[#2563EB] hover:underline">
             Yangi akkaunt ochish
           </Link>

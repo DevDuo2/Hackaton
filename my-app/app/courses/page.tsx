@@ -1,31 +1,34 @@
 'use client';
 
+import Image from 'next/image';
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Search, Star, Filter, BookOpen, Layers, Clock } from 'lucide-react';
+import { Search, Star, BookOpen, Clock } from 'lucide-react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { ProgressBar } from '../../components/ui/ProgressBar';
-import { MOCK_COURSES, Course } from '../../data/mockData';
+import { MOCK_COURSES } from '../../data/mockData';
 
 export default function CoursesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedLevel, setSelectedLevel] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
+  // Filtrlar MA'LUMOTDAN olinadi, qo'lda yozilmaydi. Ilgari ro'yxatda 'AI',
+  // 'Design' va 'Business' bor edi — birorta kursda bunday kategoriya yo'q,
+  // ya'ni uchta chipni bosganda natija har doim bo'sh chiqardi. 'Science' esa
+  // (uch kurs!) ro'yxatda yo'q edi va butun kategoriya qo'lga ilinmasdi.
   const categories = [
     'All',
-    'AI',
-    'English',
-    'Programming',
-    'Mathematics',
-    'Design',
-    'Business',
+    ...Array.from(new Set(MOCK_COURSES.map((c) => c.category))).sort(),
   ];
 
-  const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
+  const levels = [
+    'All',
+    ...Array.from(new Set(MOCK_COURSES.map((c) => c.level))).sort(),
+  ];
 
   const filteredCourses = MOCK_COURSES.filter((course) => {
     const matchesCategory =
@@ -123,10 +126,12 @@ export default function CoursesPage() {
               >
                 <div>
                   <div className="relative h-48 overflow-hidden">
-                    <img
+                    <Image
                       src={course.image}
                       alt={course.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 33vw"
                     />
                     <div className="absolute top-3 left-3 flex gap-2">
                       <Badge variant="blue" size="sm">
@@ -172,10 +177,12 @@ export default function CoursesPage() {
 
                 <div className="p-6 pt-0 border-t border-slate-100 flex items-center justify-between mt-auto">
                   <div className="flex items-center gap-2">
-                    <img
+                    <Image
                       src={course.instructor.avatar}
                       alt={course.instructor.name}
-                      className="w-7 h-7 rounded-full object-cover"
+                      className="w-7 h-7 rounded-full object-cover shrink-0"
+                      width={28}
+                      height={28}
                     />
                     <span className="text-xs text-[#64748B] font-medium truncate max-w-[120px]">
                       {course.instructor.name}

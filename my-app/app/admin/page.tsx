@@ -5,73 +5,106 @@ import Link from 'next/link';
 import {
   Users,
   BookOpen,
-  TrendingUp,
   Activity,
   Plus,
   Search,
-  ArrowUpRight,
-  ShieldCheck,
   Database,
   Server,
   Cpu,
   RefreshCw,
   Sparkles,
   Bot,
-  Layers,
   CheckCircle2,
   Clock,
   ArrowRight,
-  ExternalLink,
   Zap,
-  Globe
+  Globe,
+  AlertTriangle,
 } from 'lucide-react';
 import { AdminLayout } from '../../components/layout/AdminLayout';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { Button } from '../../components/ui/Button';
-import { ProgressBar } from '../../components/ui/ProgressBar';
-import { MOCK_ADMIN_STATS, MOCK_COURSES } from '../../data/mockData';
-import { API_BASE_URL } from '../../lib/api';
+
+
+
+
+import { MOCK_ADMIN_STATS } from '../../data/mockData';
+import { API_BASE_URL, fetchAdminStats, type AdminStats } from '../../lib/api';
 
 export default function AdminOverviewPage() {
-  const [stats, setStats] = useState(MOCK_ADMIN_STATS);
-  const [dbName, setDbName] = useState('MongoDB Atlas Connected');
-  const [serverHealth, setServerHealth] = useState('Healthy (99.9% uptime)');
+  // Jonli ko'rsatkichlar: null = hali ma'lum emas. Ilgari bu yerda
+  // MOCK_ADMIN_STATS turardi va so'rov muvaffaqiyatsiz bo'lsa ham ekranda
+  // «14 820 talaba, 412 online» ishonchli ko'rinib qolardi.
+  const [liveStats, setLiveStats] = useState<AdminStats | null>(null);
+  const [statsFailed, setStatsFailed] = useState(false);
+  // Pastdagi jadval ataylab namunaviy — u «DEMO» deb belgilangan.
+  const demoStudents = MOCK_ADMIN_STATS.recentStudents;
+  // Boshlang'ich qiymat "ulangan" deb yozilmaydi: holat API javobidan keladi.
+  const [dbName, setDbName] = useState('Tekshirilmoqda...');
+  const [serverHealth, setServerHealth] = useState('Tekshirilmoqda...');
   const [isLiveConnected, setIsLiveConnected] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [searchFilter, setSearchFilter] = useState('');
   const [filterSubject, setFilterSubject] = useState('All');
 
+  /** Serverdan kelgan ko'rsatkichlarni holatga yozadi. */
+  const applyStats = (data: AdminStats, elapsedMs: number) => {
+    setLatencyMs(Math.round(elapsedMs));
+    setLiveStats(data);
+    setStatsFailed(false);
+    if (data.database) setDbName(data.database);
+    if (data.serverStatus) setServerHealth(data.serverStatus);
+    setIsLiveConnected(true);
+  };
+
+  const markStatsUnavailable = (err: unknown) => {
+    // Jonli ma'lumot kelmadi: ko'rsatkichlar «—» bo'lib qoladi va holat
+    // maydonlari ham «Tekshirilmoqda...» da qotib qolmaydi.
+    setIsLiveConnected(false);
+    setStatsFailed(true);
+    setLatencyMs(null);
+    setDbName("Ma'lumot yo'q");
+    setServerHealth("Javob bermayapti");
+    console.warn('Admin statistikasi olinmadi:', err);
+  };
+
+  /** Tugma orqali qo'lda yangilash — spinner bilan. */
   const fetchLiveStats = async () => {
     setIsRefreshing(true);
+    const startedAt = performance.now();
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/stats`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.totalStudents !== undefined) {
-          setStats((prev) => ({
-            ...prev,
-            totalStudents: data.totalStudents || prev.totalStudents,
-            totalCourses: data.totalCourses || prev.totalCourses,
-            activeNow: data.activeUsersNow || prev.activeNow,
-          }));
-          if (data.database) setDbName(data.database);
-          if (data.serverStatus) setServerHealth(data.serverStatus);
-          setIsLiveConnected(true);
-        }
-      }
+      // /api/admin/stats endi admin tokenini talab qiladi (apiRequest o'zi qo'shadi).
+      applyStats(await fetchAdminStats(), performance.now() - startedAt);
     } catch (err) {
-      console.warn('Render live admin stats fallback:', err);
+      markStatsUnavailable(err);
     } finally {
       setTimeout(() => setIsRefreshing(false), 500);
     }
   };
 
+  // Birinchi yuklash: holat faqat promise callback ichida o'zgaradi.
   useEffect(() => {
-    fetchLiveStats();
+    let cancelled = false;
+    const startedAt = performance.now();
+    fetchAdminStats()
+      .then((data) => {
+        if (!cancelled) applyStats(data, performance.now() - startedAt);
+      })
+      .catch((err) => {
+        if (!cancelled) markStatsUnavailable(err);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const filteredStudents = stats.recentStudents.filter((s) => {
+  // Backend bilan aloqa borligi va bazaning haqiqatan ulanganligi — ikki xil holat.
+  const isDbConnected = /atlas/i.test(dbName);
+
+  /** Noma'lum ko'rsatkich «—» bo'lib chiqadi — soxta son emas. */
+  const kpi = (value: number | undefined) =>
+    liveStats === null || value === undefined ? '—' : value.toLocaleString('uz-UZ');
+
+  const filteredStudents = demoStudents.filter((s) => {
     const matchesSearch =
       s.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
       s.email.toLowerCase().includes(searchFilter.toLowerCase()) ||
@@ -83,6 +116,22 @@ export default function AdminOverviewPage() {
   return (
     <AdminLayout>
       <div className="space-y-8 max-w-7xl mx-auto pb-10">
+        {/* Jonli ko'rsatkichlar kelmaganda buni YASHIRMAYMIZ: ilgari xato faqat
+            console.warn ga tushar, ekranda esa mock raqamlar qolib ketardi. */}
+        {statsFailed && (
+          <div
+            role="alert"
+            className="flex items-start gap-2 rounded-2xl bg-amber-950/30 border border-amber-800/50 px-4 py-3 text-sm text-amber-200"
+          >
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>
+              Jonli ko&apos;rsatkichlarni backenddan olib bo&apos;lmadi, shuning
+              uchun raqamlar &laquo;—&raquo; bo&apos;lib turadi. Backend ishlab
+              turganini tekshirib, &laquo;Yangilash&raquo; tugmasini bosing.
+            </span>
+          </div>
+        )}
+
         {/* Executive Hero Banner */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0F172A] via-[#1E1B4B] to-[#0F172A] border border-slate-800 p-6 sm:p-8 shadow-2xl">
           <div className="absolute top-0 right-0 -mr-16 -mt-16 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -104,7 +153,7 @@ export default function AdminOverviewPage() {
                 Platforma Nazorati va Telemetriyasi
               </h1>
               <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
-                Talabalar faolligi, kurslar katalogi va Google Gemini sun'iy intellekti bo'yicha markaziy boshqaruv paneli.
+                Talabalar faolligi, kurslar katalogi va Google Gemini sun&apos;iy intellekti bo&apos;yicha markaziy boshqaruv paneli.
               </p>
             </div>
 
@@ -123,7 +172,7 @@ export default function AdminOverviewPage() {
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-lg shadow-blue-600/30 hover:scale-102 active:scale-98"
               >
                 <Plus className="w-4 h-4" />
-                <span>Yangi Kurs Qo'shish</span>
+                <span>Yangi Kurs Qo&apos;shish</span>
               </Link>
             </div>
           </div>
@@ -132,11 +181,21 @@ export default function AdminOverviewPage() {
           <div className="mt-6 pt-6 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
             <div className="flex items-center gap-2 text-slate-300">
               <Server className="w-4 h-4 text-blue-400 shrink-0" />
-              <span className="truncate">FastAPI: <strong className="text-emerald-400">Online (v2.0)</strong></span>
+              <span className="truncate">
+                FastAPI:{' '}
+                <strong className={isLiveConnected ? 'text-emerald-400' : 'text-amber-400'}>
+                  {isLiveConnected ? 'Online' : 'Javob bermayapti'}
+                </strong>
+              </span>
             </div>
             <div className="flex items-center gap-2 text-slate-300">
               <Database className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span className="truncate">Baza: <strong className="text-emerald-400">MongoDB Atlas</strong></span>
+              <span className="truncate">
+                Baza:{' '}
+                <strong className={isDbConnected ? 'text-emerald-400' : 'text-amber-400'}>
+                  {dbName}
+                </strong>
+              </span>
             </div>
             <div className="flex items-center gap-2 text-slate-300">
               <Bot className="w-4 h-4 text-purple-400 shrink-0" />
@@ -144,7 +203,13 @@ export default function AdminOverviewPage() {
             </div>
             <div className="flex items-center gap-2 text-slate-300">
               <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-              <span className="truncate">Kechikish: <strong className="text-amber-400">&lt; 35ms</strong></span>
+              {/* O'ylab topilgan raqam emas — oxirgi so'rovning haqiqiy vaqti. */}
+              <span className="truncate">
+                Kechikish:{' '}
+                <strong className="text-amber-400">
+                  {latencyMs === null ? '—' : `${latencyMs} ms`}
+                </strong>
+              </span>
             </div>
           </div>
         </div>
@@ -155,7 +220,7 @@ export default function AdminOverviewPage() {
           <div className="group relative overflow-hidden rounded-2xl bg-[#0F172A]/90 border border-slate-800 p-5 shadow-xl hover:border-blue-500/50 transition-all duration-300 hover:shadow-blue-500/10">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Jami Ro'yxatdan O'tganlar
+                Jami Ro&apos;yxatdan O&apos;tganlar
               </span>
               <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Users className="w-5 h-5" />
@@ -163,25 +228,21 @@ export default function AdminOverviewPage() {
             </div>
             <div className="mt-4">
               <div className="text-3xl font-black text-white tracking-tight">
-                {stats.totalStudents.toLocaleString()}
+                {kpi(liveStats?.totalStudents)}
               </div>
+              {/* «+14% bu oy» o'chirildi: o'sish dinamikasi hech qayerda saqlanmaydi. */}
               <div className="mt-2 flex items-center gap-2 text-xs">
-                <span className="inline-flex items-center font-bold text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-800/40">
-                  +14% bu oy
-                </span>
-                <span className="text-slate-400 text-[11px]">MongoDB Atlas hisobi</span>
+                <span className="text-slate-400 text-[11px]">{dbName}</span>
               </div>
             </div>
-            <div className="mt-4 h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full w-[78%]" />
-            </div>
+
           </div>
 
           {/* Card 2: Active Learners Now */}
           <div className="group relative overflow-hidden rounded-2xl bg-[#0F172A]/90 border border-slate-800 p-5 shadow-xl hover:border-purple-500/50 transition-all duration-300 hover:shadow-purple-500/10">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Hozirgi Faol O'quvchilar
+                Hozirgi Faol O&apos;quvchilar
               </span>
               <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Activity className="w-5 h-5 animate-pulse" />
@@ -189,7 +250,7 @@ export default function AdminOverviewPage() {
             </div>
             <div className="mt-4">
               <div className="text-3xl font-black text-white tracking-tight flex items-center gap-2">
-                <span>{stats.activeNow}</span>
+                <span>{kpi(liveStats?.activeUsersNow)}</span>
                 <span className="text-sm font-semibold text-purple-400">online</span>
               </div>
               <div className="mt-2 flex items-center gap-2 text-xs">
@@ -216,11 +277,11 @@ export default function AdminOverviewPage() {
             </div>
             <div className="mt-4">
               <div className="text-3xl font-black text-white tracking-tight">
-                {stats.totalCourses} ta kurs
+                {kpi(liveStats?.totalCourses)} ta kurs
               </div>
               <div className="mt-2 flex items-center gap-2 text-xs">
                 <span className="inline-flex items-center font-bold text-emerald-300 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-800/40">
-                  3 asosiy yo'nalish
+                  3 asosiy yo&apos;nalish
                 </span>
                 <span className="text-slate-400 text-[11px]">32 ta dars moduli</span>
               </div>
@@ -266,13 +327,20 @@ export default function AdminOverviewPage() {
                 <span>Infratuzilma va Bulutli Xizmatlar Holati</span>
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                Render.com, MongoDB Atlas va Google Gemini API o'rtasidagi uzluksiz telemetriya
+                Render.com, MongoDB Atlas va Google Gemini API o&apos;rtasidagi uzluksiz telemetriya
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-950/40 text-emerald-400 border border-emerald-800/50 text-xs font-semibold">
+              {/* Holat API javobiga qarab ko'rsatiladi — doimiy "salomat" yozuvi emas. */}
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-semibold ${
+                  isLiveConnected
+                    ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/50'
+                    : 'bg-amber-950/40 text-amber-400 border-amber-800/50'
+                }`}
+              >
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                Barcha Xizmatlar Salomat
+                {isLiveConnected ? 'Backend bilan aloqa bor' : 'Backenddan javob yo’q'}
               </span>
             </div>
           </div>
@@ -283,12 +351,14 @@ export default function AdminOverviewPage() {
                 <Globe className="w-4 h-4" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-white">Render.com Web Service</p>
-                <p className="text-[11px] text-slate-400 truncate mt-0.5">https://hackaton-xl22.onrender.com</p>
+                <p className="text-xs font-bold text-white">Backend API</p>
+                <p className="text-[11px] text-slate-400 truncate mt-0.5">{API_BASE_URL}</p>
                 <div className="mt-2 flex items-center gap-2 text-[10px]">
-                  <span className="text-emerald-400 font-bold">● LIVE</span>
+                  <span className={`font-bold ${isLiveConnected ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    {isLiveConnected ? '● Javob beryapti' : '○ Javob bermayapti'}
+                  </span>
                   <span className="text-slate-500">|</span>
-                  <span className="text-slate-400">Python 3.12 + FastAPI</span>
+                  <span className="text-slate-400">Python + FastAPI</span>
                 </div>
               </div>
             </div>
@@ -298,12 +368,15 @@ export default function AdminOverviewPage() {
                 <Database className="w-4 h-4" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-white">MongoDB Atlas Cluster</p>
-                <p className="text-[11px] text-slate-400 truncate mt-0.5">cluster0.icm4m9p.mongodb.net</p>
+                <p className="text-xs font-bold text-white">Ma’lumotlar bazasi</p>
+                {/* Klaster manzili ataylab ko'rsatilmaydi: bu infratuzilma tafsiloti. */}
+                <p className="text-[11px] text-slate-400 truncate mt-0.5">{dbName}</p>
                 <div className="mt-2 flex items-center gap-2 text-[10px]">
-                  <span className="text-emerald-400 font-bold">● Bog'langan</span>
+                  <span className={`font-bold ${isDbConnected ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    {isDbConnected ? '● Bog‘langan' : '○ Xotira rejimi'}
+                  </span>
                   <span className="text-slate-500">|</span>
-                  <span className="text-slate-400">Ping: 28ms</span>
+                  <span className="text-slate-400">{serverHealth}</span>
                 </div>
               </div>
             </div>
@@ -318,7 +391,7 @@ export default function AdminOverviewPage() {
                 <div className="mt-2 flex items-center gap-2 text-[10px]">
                   <span className="text-purple-400 font-bold">● Faol</span>
                   <span className="text-slate-500">|</span>
-                  <span className="text-slate-400">O'zbek tili optimallashtirilgan</span>
+                  <span className="text-slate-400">O&apos;zbek tili optimallashtirilgan</span>
                 </div>
               </div>
             </div>
@@ -331,10 +404,16 @@ export default function AdminOverviewPage() {
             <div>
               <h3 className="font-bold text-base text-white flex items-center gap-2">
                 <Users className="w-5 h-5 text-blue-400" />
-                <span>Jonli Talabalar Ro'yxati & O'zlashtirish</span>
+                <span>Talabalar namunasi</span>
+                <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[10px] font-bold">
+                  DEMO
+                </span>
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                Real vaqt rejimida talabalarning progressi va faoliyati
+                Bu jadval namunaviy ma&apos;lumot. Haqiqiy ro&apos;yxat:{' '}
+                <Link href="/admin/students" className="text-blue-400 hover:underline font-semibold">
+                  Student Directory
+                </Link>
               </p>
             </div>
 
@@ -375,9 +454,9 @@ export default function AdminOverviewPage() {
               <thead className="bg-slate-900/90 text-slate-400 font-bold border-b border-slate-800 uppercase tracking-wider text-[10px]">
                 <tr>
                   <th className="py-3.5 px-4">Talaba Profili</th>
-                  <th className="py-3.5 px-4">Tanlangan Yo'nalish</th>
-                  <th className="py-3.5 px-4">O'zlashtirish Darajasi</th>
-                  <th className="py-3.5 px-4">Qo'shilgan Sanasi</th>
+                  <th className="py-3.5 px-4">Tanlangan Yo&apos;nalish</th>
+                  <th className="py-3.5 px-4">O&apos;zlashtirish Darajasi</th>
+                  <th className="py-3.5 px-4">Qo&apos;shilgan Sanasi</th>
                   <th className="py-3.5 px-4 text-right">Amal</th>
                 </tr>
               </thead>
@@ -422,7 +501,15 @@ export default function AdminOverviewPage() {
                     </td>
                     <td className="py-4 px-4 text-slate-400 font-medium">{s.joined}</td>
                     <td className="py-4 px-4 text-right">
-                      <button className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs transition-colors cursor-pointer">
+                      {/* Jadval «DEMO» deb belgilangan, bu qatorlar haqiqiy
+                          talabalar emas — shuning uchun tugma o'chirilgan va
+                          sababi aytilgan. Haqiqiy ro'yxat: /admin/students. */}
+                      <button
+                        type="button"
+                        disabled
+                        title="Namunaviy qator: haqiqiy profil uchun Student Directory bo'limiga o'ting"
+                        className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 border border-slate-700 font-semibold text-xs opacity-50 cursor-not-allowed"
+                      >
                         Batafsil
                       </button>
                     </td>
@@ -441,13 +528,13 @@ export default function AdminOverviewPage() {
             </div>
             <h4 className="font-bold text-sm text-white mb-2">Kurslar Katalogi Boshqaruvi</h4>
             <p className="text-xs text-slate-400 mb-4 leading-relaxed">
-              Barcha 3 ta asosiy fanlar bo'yicha mavzular, amaliy mashg'ulotlar va dars modullarini boshqaring.
+              Barcha 3 ta asosiy fanlar bo&apos;yicha mavzular, amaliy mashg&apos;ulotlar va dars modullarini boshqaring.
             </p>
             <Link
               href="/admin/courses"
               className="text-xs font-bold text-blue-400 hover:text-blue-300 inline-flex items-center gap-1.5 transition-colors"
             >
-              <span>Kurslar bo'limiga o'tish</span>
+              <span>Kurslar bo&apos;limiga o&apos;tish</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -458,13 +545,13 @@ export default function AdminOverviewPage() {
             </div>
             <h4 className="font-bold text-sm text-white mb-2">Talabalar Rekordlari & Tahlil</h4>
             <p className="text-xs text-slate-400 mb-4 leading-relaxed">
-              O'quvchilar reytingi (Leaderboard), olingan XP ballari va kunlik streak ko'rsatkichlarini ko'ring.
+              O&apos;quvchilar reytingi (Leaderboard), olingan XP ballari va kunlik streak ko&apos;rsatkichlarini ko&apos;ring.
             </p>
             <Link
               href="/admin/students"
               className="text-xs font-bold text-purple-400 hover:text-purple-300 inline-flex items-center gap-1.5 transition-colors"
             >
-              <span>Talabalar profiliga o'tish</span>
+              <span>Talabalar profiliga o&apos;tish</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -475,13 +562,13 @@ export default function AdminOverviewPage() {
             </div>
             <h4 className="font-bold text-sm text-white mb-2">AI Testlar & Savollar Banki</h4>
             <p className="text-xs text-slate-400 mb-4 leading-relaxed">
-              Sun'iy intellekt tomonidan shakllantirilgan kunlik testlar va qadam-baqadam izohlarni sozlang.
+              Sun&apos;iy intellekt tomonidan shakllantirilgan kunlik testlar va qadam-baqadam izohlarni sozlang.
             </p>
             <Link
               href="/admin/quizzes"
               className="text-xs font-bold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1.5 transition-colors"
             >
-              <span>Savollar bankiga o'tish</span>
+              <span>Savollar bankiga o&apos;tish</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>

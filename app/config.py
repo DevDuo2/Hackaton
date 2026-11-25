@@ -41,6 +41,8 @@ class Settings:
     max_session_seconds: int = DEFAULT_MAX_SESSION_SECONDS
     init_data_max_age_seconds: int = DEFAULT_INIT_DATA_MAX_AGE_SECONDS
     dev_skip_telegram_auth: bool = False
+    # Bepul hostingda alohida worker yo'q: bot veb-servis jarayonida yuradi.
+    run_bot_in_web: bool = False
     app_env: str = "development"
     allowed_origins: tuple[str, ...] = ()  # explicit ALLOWED_ORIGINS; empty = derive (see below)
     gemini_summary_fallback_models: tuple[str, ...] = DEFAULT_SUMMARY_FALLBACK_MODELS
@@ -74,7 +76,8 @@ class Settings:
             f"gemini_live_model={self.gemini_live_model!r}, "
             f"gemini_summary_model={self.gemini_summary_model!r}, "
             f"max_session_seconds={self.max_session_seconds}, "
-            f"dev_skip_telegram_auth={self.dev_skip_telegram_auth}, app_env={self.app_env!r}, "
+            f"dev_skip_telegram_auth={self.dev_skip_telegram_auth}, "
+            f"run_bot_in_web={self.run_bot_in_web}, app_env={self.app_env!r}, "
             f"allowed_origins={self.allowed_origins!r})"
         )
 
@@ -145,6 +148,7 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
             env, "TELEGRAM_INIT_DATA_MAX_AGE_SECONDS", DEFAULT_INIT_DATA_MAX_AGE_SECONDS, 60, 86400
         ),
         dev_skip_telegram_auth=_bool(env.get("DEV_SKIP_TELEGRAM_AUTH")),
+        run_bot_in_web=_bool(env.get("RUN_BOT_IN_WEB")),
         app_env=(_clean(env.get("APP_ENV")) or "development").lower(),
         allowed_origins=tuple(
             o.strip().rstrip("/").lower() for o in (env.get("ALLOWED_ORIGINS") or "").split(",") if o.strip()

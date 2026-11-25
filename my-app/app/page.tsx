@@ -1,29 +1,37 @@
 'use client';
 
+import Image from 'next/image';
 import React from 'react';
 import Link from 'next/link';
 import {
   Sparkles,
   ArrowRight,
-  Play,
   BookOpen,
   Mic,
   Trophy,
   TrendingUp,
-  CheckCircle2,
-  Users,
   Star,
-  Award,
 } from 'lucide-react';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { Button } from '../components/ui/Button';
-import { Card, CardContent } from '../components/ui/Card';
+import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { MOCK_COURSES } from '../data/mockData';
+import { useSession } from '../lib/clientStore';
 
 export default function HomePage() {
   const popularCourses = MOCK_COURSES.slice(0, 3);
+
+  // CTA lar sessiyaga qarab yo'naltiriladi. Ilgari hammasi `/dashboard` va
+  // `/ai-tutor` ga olib borardi — himoyalangan sahifalarga. Kirmagan mehmon
+  // «Start Learning Now» ni bosganda bir lahza dashboard ko'rinib, keyin
+  // login ekraniga uloqtirilardi.
+  const session = useSession();
+  const isLoggedIn = session !== null;
+  const primaryHref = isLoggedIn ? '/dashboard' : '/register';
+  const primaryLabel = isLoggedIn ? "Dashboardga o'tish" : 'Bepul boshlash';
+  const tutorHref = isLoggedIn ? '/ai-tutor' : '/login';
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
@@ -61,15 +69,15 @@ export default function HomePage() {
 
           {/* CTA Group */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <Link href="/dashboard" className="w-full sm:w-auto">
+            <Link href={primaryHref} className="w-full sm:w-auto">
               <Button size="lg" variant="primary" className="w-full sm:w-auto">
-                <span>Start Learning Now</span>
+                <span>{primaryLabel}</span>
                 <ArrowRight className="w-5 h-5 ml-1" />
               </Button>
             </Link>
-            <Link href="/ai-tutor" className="w-full sm:w-auto">
+            <Link href={tutorHref} className="w-full sm:w-auto">
               <Button size="lg" variant="secondary" className="w-full sm:w-auto" icon={<Sparkles className="w-5 h-5" />}>
-                Try VOXY AI Tutor
+                {isLoggedIn ? 'AI Murabbiyni sinash' : 'Kirish'}
               </Button>
             </Link>
           </div>
@@ -199,10 +207,12 @@ export default function HomePage() {
             {popularCourses.map((course) => (
               <Card key={course.id} className="overflow-hidden flex flex-col group">
                 <div className="relative h-48 overflow-hidden">
-                  <img
+                  <Image
                     src={course.image}
                     alt={course.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 33vw"
                   />
                   <div className="absolute top-3 left-3 flex gap-2">
                     <Badge variant="blue" size="sm">
@@ -230,10 +240,12 @@ export default function HomePage() {
 
                   <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <img
+                      <Image
                         src={course.instructor.avatar}
                         alt={course.instructor.name}
-                        className="w-7 h-7 rounded-full object-cover"
+                        className="w-7 h-7 rounded-full object-cover shrink-0"
+                        width={28}
+                        height={28}
                       />
                       <span className="text-xs text-[#64748B] font-medium truncate max-w-[120px]">
                         {course.instructor.name}
@@ -253,8 +265,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-20 bg-white border-t border-slate-100">
+      {/* How It Works — footerdagi "About VOXY" havolasi shu yerga olib keladi. */}
+      <section id="about" className="py-20 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <Badge variant="purple" size="md" className="mb-2">
@@ -337,13 +349,15 @@ export default function HomePage() {
                 ))}
               </div>
               <p className="text-sm text-[#1E293B] italic mb-6">
-                "The AI Speaking feature helped me overcome my fear of speaking English during technical job interviews. Truly transformative!"
+                &quot;The AI Speaking feature helped me overcome my fear of speaking English during technical job interviews. Truly transformative!&quot;
               </p>
               <div className="flex items-center gap-3">
-                <img
+                <Image
                   src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
                   alt="Zumradxon"
-                  className="w-10 h-10 rounded-full object-cover"
+                  className="w-10 h-10 rounded-full object-cover shrink-0"
+                  width={40}
+                  height={40}
                 />
                 <div>
                   <p className="text-xs font-bold text-[#1E293B]">Zumradxon X.</p>
@@ -359,13 +373,15 @@ export default function HomePage() {
                 ))}
               </div>
               <p className="text-sm text-[#1E293B] italic mb-6">
-                "VOXY breaks down complex prompt engineering and machine learning principles better than expensive bootcamps."
+                &quot;VOXY breaks down complex prompt engineering and machine learning principles better than expensive bootcamps.&quot;
               </p>
               <div className="flex items-center gap-3">
-                <img
+                <Image
                   src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
                   alt="Bekzod"
-                  className="w-10 h-10 rounded-full object-cover"
+                  className="w-10 h-10 rounded-full object-cover shrink-0"
+                  width={40}
+                  height={40}
                 />
                 <div>
                   <p className="text-xs font-bold text-[#1E293B]">Bekzod T.</p>
@@ -381,13 +397,15 @@ export default function HomePage() {
                 ))}
               </div>
               <p className="text-sm text-[#1E293B] italic mb-6">
-                "Cleanest UI I have seen in EdTech. The color balance, quick interactive quizzes, and streak metrics make daily practice effortless."
+                &quot;Cleanest UI I have seen in EdTech. The color balance, quick interactive quizzes, and streak metrics make daily practice effortless.&quot;
               </p>
               <div className="flex items-center gap-3">
-                <img
+                <Image
                   src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80"
                   alt="Malika"
-                  className="w-10 h-10 rounded-full object-cover"
+                  className="w-10 h-10 rounded-full object-cover shrink-0"
+                  width={40}
+                  height={40}
                 />
                 <div>
                   <p className="text-xs font-bold text-[#1E293B]">Malika S.</p>
@@ -410,14 +428,14 @@ export default function HomePage() {
               Join thousands of learners elevating their skills daily with VOXY AI. Start free today.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link href="/dashboard">
+              <Link href={primaryHref}>
                 <Button size="lg" className="bg-white text-[#2563EB] hover:bg-slate-100 shadow-none font-bold">
-                  Open Free Dashboard
+                  {primaryLabel}
                 </Button>
               </Link>
-              <Link href="/ai-tutor">
+              <Link href={tutorHref}>
                 <Button size="lg" variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/30 shadow-none">
-                  Try AI Tutor
+                  {isLoggedIn ? 'AI Murabbiyni sinash' : 'Kirish'}
                 </Button>
               </Link>
             </div>

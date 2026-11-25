@@ -1,22 +1,97 @@
+# Render.com blueprint — uchta servis, barchasi BEPUL tarifda.
+#
+# DIQQAT: bu repoda IKKITA alohida FastAPI ilovasi bor va ikkalasining ham
+# ishga tushirish moduli `app.main:app` deb ataladi. Farqi — qaysi papkadan
+# turib ishga tushirishda:
+#
+#   1) Sayt REST API   -> rootDir: backend   (MongoDB, auth, quiz, AI chat)
+#   2) Ovozli tyutor   -> repo ildizi        (Telegram Mini App + Gemini Live + BOT)
+#
+# Bepul tarifda Render «Background Worker» bermaydi, shuning uchun Telegram bot
+# ovozli servis jarayonining ICHIDA yuradi: RUN_BOT_IN_WEB=true.
+# Bepul servis 15 daqiqa harakatsizlikdan keyin uxlab qoladi va bot to'xtaydi —
+# shuning uchun /api/health ga bepul cron (masalan cron-job.org) bilan har 10
+# daqiqada so'rov yuborish SHART. Batafsil: DEPLOYMENT.md.
 services:
+  # 1. Sayt REST API — backend/app/main.py
   - type: web
     name: voxy-api
     runtime: python
+    plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.2
+      - key: APP_ENV
+        value: production
+      # Quyidagilar Render dashboardida to'ldiriladi (repoga yozilmaydi).
+      # JWT_SECRET majburiy: APP_ENV=production bo'lsa, bo'sh kalit bilan
+      # server ataylab ishga tushmaydi.
+      - key: JWT_SECRET
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://voxy-frontend.onrender.com,http://localhost:3000
 
+  # 2. Ovozli tyutor + Telegram Mini App + BOT — ildizdagi app/main.py
+  #    Mini App manzili: https://voxy-voice.onrender.com/miniapp/
+  #    (servis nomi o'zgarsa, MINI_APP_URL ni ham o'zgartirish kerak!)
+  - type: web
+    name: voxy-voice
+    runtime: python
+    plan: free
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    # --workers 1 ataylab: tiketlar va sessiya qulflari xotirada, bot ham bitta
+    # jarayonda polling qilishi kerak (ikki polling = Telegram "Conflict").
+    startCommand: >-
+      uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+      --proxy-headers --no-access-log --timeout-graceful-shutdown 20
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.2
+      - key: APP_ENV
+        value: production
+      # Bot shu veb-servis ichida ishlaydi (bepul tarifda worker yo'q).
+      - key: RUN_BOT_IN_WEB
+        value: "true"
+      # Telegram faqat https manzilni qabul qiladi. Servis nomiga bog'liq!
+      - key: MINI_APP_URL
+        value: https://voxy-voice.onrender.com/miniapp/
+      - key: BACKEND_URL
+        value: https://voxy-voice.onrender.com
+      - key: FORWARDED_ALLOW_IPS
+        value: "*"
+      # Sirlar — faqat Render dashboardida:
+      - key: BOT_TOKEN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+
+  # 3. Next.js frontend — my-app/
   - type: web
     name: voxy-frontend
     runtime: node
+    plan: free
     rootDir: my-app
     buildCommand: npm install && npm run build
     startCommand: npm run start
     envVars:
       - key: NODE_VERSION
         value: 20.18.0
+      # Shu blueprint yaratadigan `voxy-api` servisining manzili (yuqoriga qarang).
+      # DIQQAT: ilgari bu yerda `hackaton-xl22.onrender.com` turardi — u eski,
+      # 2.0.0 versiyali, himoyasiz deploy. Servis nomini o'zgartirsangiz, shu
+      # qiymatni ham o'zgartirish kerak.
       - key: NEXT_PUBLIC_API_URL
-        value: https://hackaton-xl22.onrender.com
+        value: https://voxy-api.onrender.com
+      # Telegramdagi bot username (@ belgisisiz) — /speaking sahifasidagi havola uchun.
+      - key: NEXT_PUBLIC_TELEGRAM_BOT
+        value: lockbridge_bot

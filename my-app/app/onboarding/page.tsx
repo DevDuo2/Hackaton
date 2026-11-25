@@ -1,31 +1,51 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Sparkles,
   ArrowRight,
   CheckCircle2,
-  BookOpen,
-  GraduationCap,
-  Layers,
+  Loader2,
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
-import { SUBJECTS, Subject } from '../../data/mockData';
+
+import { SUBJECTS } from '../../data/mockData';
+import { ApiError, apiRequest } from '../../lib/api';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('matematika');
   const [level, setLevel] = useState<string>('O\'rta (Litsey / Kollej darajasi)');
 
-  const handleFinishOnboarding = () => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleFinishOnboarding = async () => {
+    setIsSaving(true);
     if (typeof window !== 'undefined') {
       localStorage.setItem('voxy_active_subject', selectedSubjectId);
       localStorage.setItem('voxy_user_level', level);
     }
+
+    // Tanlovni profilga ham yozamiz. Server javob bermasa ham dashboardga o'tamiz:
+    // localStorage dagi tanlov UI uchun yetarli.
+    try {
+      await apiRequest('/api/subjects/select', {
+        method: 'POST',
+        body: JSON.stringify({ subjectId: selectedSubjectId, level }),
+      });
+    } catch (err) {
+      // 401 ni yutib yuborish mumkin emas: sessiya yo'q bo'lsa tanlov hech
+      // qayerga yozilmaydi va foydalanuvchi «saqlandi» deb o'ylab dashboardga
+      // o'tadi, keyin esa u yerdan login ekraniga uloqtiriladi.
+      if (err instanceof ApiError && err.status === 401) {
+        router.replace('/login');
+        return;
+      }
+      console.warn("Fan tanlovini serverga yozib bo'lmadi:", err);
+    }
+
     router.push('/dashboard');
   };
 
@@ -39,15 +59,15 @@ export default function OnboardingPage() {
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-xs font-bold text-[#2563EB]">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>1-Qadam: O'zingizga mos fanni tanlang</span>
+            <span>1-Qadam: O&apos;zingizga mos fanni tanlang</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl font-black text-[#1E293B] tracking-tight">
-            Xush kelibsiz! Qaysi fanni o'rganamiz?
+            Xush kelibsiz! Qaysi fanni o&apos;rganamiz?
           </h1>
 
           <p className="text-sm text-[#64748B] max-w-xl mx-auto">
-            VOXY faqat bitta yo'nalish emas — barcha asosiy fanlarni qamrab oladi. Fanni tanlang, biz siz uchun shaxsiy AI murabbiy va testlarni aynan shu fanga moslashtiramiz.
+            VOXY faqat bitta yo&apos;nalish emas — barcha asosiy fanlarni qamrab oladi. Fanni tanlang, biz siz uchun shaxsiy AI murabbiy va testlarni aynan shu fanga moslashtiramiz.
           </p>
         </div>
 
@@ -87,7 +107,7 @@ export default function OnboardingPage() {
 
                 <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-[#64748B]">
                   <span>{sub.topicsCount} ta mavzu</span>
-                  <span className="font-semibold text-[#1E293B]">{sub.studentsCount} o'quvchi</span>
+                  <span className="font-semibold text-[#1E293B]">{sub.studentsCount} o&apos;quvchi</span>
                 </div>
               </div>
             );
@@ -107,10 +127,10 @@ export default function OnboardingPage() {
                 className="w-full sm:w-80 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-[#1E293B] focus:outline-none focus:border-[#2563EB]"
               >
                 <option value="Boshlang'ich (Maktab darajasi)">
-                  Boshlang'ich (Maktab darajasi)
+                  Boshlang&apos;ich (Maktab darajasi)
                 </option>
                 <option value="O'rta (Litsey / Kollej darajasi)">
-                  O'rta (Litsey / Kollej darajasi)
+                  O&apos;rta (Litsey / Kollej darajasi)
                 </option>
                 <option value="Chuqurlashtirilgan (Universitet / Olimpiada)">
                   Chuqurlashtirilgan (Universitet / Olimpiada)
@@ -123,10 +143,20 @@ export default function OnboardingPage() {
                 variant="primary"
                 size="lg"
                 onClick={handleFinishOnboarding}
+                disabled={isSaving}
                 className="w-full sm:w-auto px-8"
               >
-                <span>Tanlangan {selectedSubject.name} bo'yicha Boshlash</span>
-                <ArrowRight className="w-4 h-4 ml-1" />
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Saqlanmoqda...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Tanlangan {selectedSubject.name} bo&apos;yicha Boshlash</span>
+                    <ArrowRight className="w-4 h-4 ml-1" />
+                  </>
+                )}
               </Button>
             </div>
           </div>

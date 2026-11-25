@@ -73,9 +73,10 @@ def _error_code(exc: BaseException) -> tuple[str, str]:
         status = getattr(exc, "code", None)
         text = str(exc).lower()
         if status in (401, 403) or "api key" in text or "permission" in text:
-            return "ai_auth_failed", "AI xizmati kalitni qabul qilmadi (GEMINI_API_KEY noto'g'ri)."
+            # Talabaga server o'zgaruvchilarining nomi aytilmaydi; tafsilot faqat logda.
+            return "ai_auth_failed", "AI xizmati hozir ishlamayapti. Administrator sozlamalarni tekshirishi kerak."
         if status == 404 or "not found" in text:
-            return "ai_model_unavailable", "AI modeli topilmadi (GEMINI_LIVE_MODEL)."
+            return "ai_model_unavailable", "AI modeli mavjud emas. Administrator sozlamalarni tekshirishi kerak."
         if status == 429 or "quota" in text or "resource_exhausted" in text:
             return "ai_quota", "AI xizmati limiti tugadi. Keyinroq urinib ko'ring."
     return "ai_connect_failed", "AI xizmatiga ulanib bo'lmadi."
@@ -156,7 +157,22 @@ class LiveBridge:
                 with contextlib.suppress(asyncio.CancelledError, Exception):
                     await task
 
-        finished = done.pop()
+        # `done` ikkita vazifani ham o'z ichiga olishi mumkin: mijozning uzilishi
+        # va vaqt chegarasi bir `asyncio.wait` siklida tugab qolsa. `set.pop()`
+        # to'plamdan TASODIFIY element oladi, shuning uchun bir xil holatda
+        # sessiya sababi har xil chiqib, xulosa ba'zida yetkazilmay qolardi.
+        # Sabab aniq tartib bilan tanlanadi: mijoz ketgani eng muhim xabar.
+        def _severity(task: asyncio.Task) -> int:
+            error = task.exception()
+            if isinstance(error, WebSocketDisconnect):
+                return 0
+            if isinstance(error, SessionFailed):
+                return 1
+            if error is not None:
+                return 2
+            return 3
+
+        finished = min(done, key=_severity)
         exc = finished.exception()
         if isinstance(exc, WebSocketDisconnect):
             return "client_disconnected"  # nobody to deliver a summary to

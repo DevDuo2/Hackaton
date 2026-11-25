@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { saveSession } from '../../lib/auth';
 import { User, Mail, Lock, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function RegisterPage() {
@@ -35,14 +36,11 @@ export default function RegisterPage() {
         return;
       }
 
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('voxy_auth_user', JSON.stringify(data.user));
-        localStorage.setItem('voxy_auth_token', data.user.token);
-      }
+      saveSession(data.user, data.token);
 
       // Redirect new user directly to Subject Selection (Onboarding)
       router.push('/onboarding');
-    } catch (err) {
+    } catch {
       setErrorMessage('Server bilan bog\'lanishda xatolik yuz berdi');
     } finally {
       setIsLoading(false);
@@ -60,7 +58,7 @@ export default function RegisterPage() {
         </Link>
         <h2 className="text-2xl font-extrabold text-[#1E293B]">Yangi Profil Ochish</h2>
         <p className="mt-2 text-sm text-[#64748B]">
-          Bir necha soniyada ro'yxatdan o'ting va fanni tanlang
+          Bir necha soniyada ro&apos;yxatdan o&apos;ting va fanni tanlang
         </p>
       </div>
 
@@ -139,7 +137,7 @@ export default function RegisterPage() {
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5">
-                  <span>Ro'yxatdan O'tish va Fanni Tanlash</span>
+                  <span>Ro&apos;yxatdan O&apos;tish va Fanni Tanlash</span>
                   <ArrowRight className="w-4 h-4 ml-1" />
                 </div>
               )}

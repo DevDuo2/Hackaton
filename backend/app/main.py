@@ -1,20 +1,25 @@
+import logging
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.config import settings
-from app.core.database import connect_to_mongo, close_mongo_connection
+from app.core.config import PREVIEW_ORIGIN_REGEX, settings
+from app.core.database import close_mongo_connection, connect_to_mongo
+from app.core.security import check_jwt_secret
 from app.core.seeder import seed_initial_data
-
 from app.routers import (
-    auth,
-    subjects,
-    courses,
+    admin,
     ai_tutor,
+    auth,
+    courses,
     quizzes,
+    subjects,
     telegram,
-    admin
 )
+
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -25,22 +30,30 @@ async def lifespan(app: FastAPI):
     # Shutdown: Ulanishni yopish
     await close_mongo_connection()
 
+
+# Production'da standart JWT kaliti bilan ishga tushishni to'xtatadi (import vaqtida).
+check_jwt_secret()
+
 app = FastAPI(
     title="VOXY — AI Learning Platform REST API",
     description="Ko'p tarmoqli AI ta'lim platformasi uchun to'liq backend API xizmati (MongoDB + FastAPI + Swagger).",
-    version="2.0.0",
+    version="2.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
-# CORS sozlamalari (Next.js frontend va Render / Vercel uchun ruxsat)
+# CORS: aniq ro'yxat + Render/Vercel preview manzillari uchun regex.
+# `allow_origins=["*"]` ataylab qo'llanmaydi — allow_credentials=True bilan
+# brauzerlar uni rad etadi va hech qanday himoya bermaydi.
+logger.info("CORS origins: %s (+regex %s)", settings.cors_origins, PREVIEW_ORIGIN_REGEX)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins,
+    allow_origin_regex=PREVIEW_ORIGIN_REGEX,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # Routerlar
@@ -52,13 +65,33 @@ app.include_router(quizzes.router)
 app.include_router(telegram.router)
 app.include_router(admin.router)
 
+
 @app.get("/", tags=["Health Check"])
 def root():
     return {
         "status": "online",
         "service": "VOXY AI Backend API",
-        "database": "MongoDB Connected",
-        "version": "2.0.0",
+        "version": app.version,
+        "environment": settings.APP_ENV,
         "docs": "/docs",
-        "health": "100% Operational"
+    }
+
+
+@app.get("/api/health", tags=["Health Check"])
+async def health():
+    """Monitoring uchun: baza haqiqatan ulanganini ham ko'rsatadi."""
+    from app.core.database import get_database
+
+    db = get_database()
+    connected = False
+    if db is not None:
+        try:
+            await db.client.admin.command("ping")
+            connected = True
+        except Exception:
+            connected = False
+    return {
+        "status": "ok",
+        "database": "connected" if connected else "fallback_memory",
+        "environment": settings.APP_ENV,
     }

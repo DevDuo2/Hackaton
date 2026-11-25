@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '../../../components/ui/Button';
-import { Card } from '../../../components/ui/Card';
+
+import { saveSession } from '../../../lib/auth';
 import {
   ShieldAlert,
   ShieldCheck,
@@ -20,7 +21,9 @@ import {
 export default function AdminLoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  // Admin paroli ataylab bo'sh: ochiq qolgan brauzerda Enter bosib admin
+  // paneliga kirib bo'lmasin. Hakamlar uchun pastdagi «Demo» tugmasi bor.
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -44,15 +47,11 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // Save admin session in localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('voxy_auth_user', JSON.stringify(data.user));
-        localStorage.setItem('voxy_auth_token', data.token || data.user?.token);
-      }
+      saveSession(data.user, data.token);
 
       // Redirect directly to Admin Overview Dashboard
       router.push('/admin');
-    } catch (err) {
+    } catch {
       setErrorMessage('Server bilan bog\'lanishda xatolik yuz berdi.');
     } finally {
       setIsLoading(false);
@@ -161,7 +160,7 @@ export default function AdminLoginPage() {
               className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-semibold bg-amber-950/30 hover:bg-amber-900/40 px-3 py-1.5 rounded-lg border border-amber-800/40 transition-colors"
             >
               <KeyRound className="w-3.5 h-3.5" />
-              <span>Hakaton Demo: admin / admin123 to'ldirish</span>
+              <span>Hakaton Demo: admin / admin123 to&apos;ldirish</span>
             </button>
           </div>
         </div>

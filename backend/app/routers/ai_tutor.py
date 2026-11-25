@@ -1,27 +1,74 @@
+import logging
 import os
 import time
 import httpx
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from app.models.schemas import AIChatRequest, AIChatResponse
 from app.core.database import get_database
+from app.core.ratelimit import ai_limiter
+from app.core.security import get_current_user
 from app.data.database import SUBJECTS_DB
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/ai", tags=["AI Personal Tutor"])
 
+DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite"
+
+
+def _gemini_key() -> str:
+    return os.getenv("GEMINI_API_KEY", "").strip()
+
+
+def _gemini_model() -> str:
+    return os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL).strip() or DEFAULT_GEMINI_MODEL
+
+
+@router.get("/status")
+async def ai_status():
+    """Frontend AI haqiqatan ulanganini bilishi uchun. Kalitning o'zi qaytarilmaydi."""
+    configured = bool(_gemini_key())
+    return {
+        "configured": configured,
+        "model": _gemini_model() if configured else None,
+        "fallback": "offline_knowledge_base",
+    }
+
 @router.post("/chat", response_model=AIChatResponse)
-async def ask_ai_tutor(payload: AIChatRequest):
+async def ask_ai_tutor(
+    payload: AIChatRequest,
+    request: Request,
+    claims: dict = Depends(get_current_user),
+):
+    """Google Gemini API orqali fan bo'yicha maslahat.
+
+    Avtorizatsiya talab qiladi: aks holda har qanday odam Gemini kvotasini
+    anonim ravishda sarflab yuborishi mumkin.
     """
-    Haqiqiy Google Gemini API (gemini-3.5-flash-lite) orqali fan bo'yicha maslahat berish.
-    """
+    # Har bir so'rov pullik Gemini chaqiruvi — foydalanuvchi bo'yicha cheklanadi.
+    ai_limiter.check(claims["sub"])
+
+    from_gemini = False
+    question = payload.question.strip()
+    if not question:
+        raise HTTPException(status_code=422, detail="Savol bo'sh bo'lmasligi kerak.")
+
     db = get_database()
     sub = None
     if db is not None:
         sub = await db["subjects"].find_one({"id": payload.subjectId})
     if not sub:
-        sub = next((s for s in SUBJECTS_DB if s["id"] == payload.subjectId), SUBJECTS_DB[0])
+        sub = next((s for s in SUBJECTS_DB if s["id"] == payload.subjectId), None)
+    if not sub:
+        # Ilgari bu yerda SUBJECTS_DB[0] ga qaytar edi: talaba "Kimyo" tanlasa ham AI
+        # matematika o'qituvchisi bo'lib javob berardi.
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Bunday fan topilmadi.",
+        )
 
-    gemini_key = os.getenv("GEMINI_API_KEY", "")
-    gemini_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+    gemini_key = _gemini_key()
+    gemini_model = _gemini_model()
     ai_text = ""
 
     # Real Google Gemini API Call
@@ -33,7 +80,7 @@ async def ask_ai_tutor(payload: AIChatRequest):
                 f"amaliy misollar bilan yordam ber. Javobing chiroyli va qulay formatda bo'lsin."
             )
 
-            prompt = f"Mavzu/Fan: {sub['name']}\nSavol: {payload.question}\n\nIltimos batafsil va aniq tushuntirib ber."
+            prompt = f"Mavzu/Fan: {sub['name']}\nSavol: {question}\n\nIltimos batafsil va aniq tushuntirib ber."
 
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={gemini_key}"
             
@@ -57,13 +104,21 @@ async def ask_ai_tutor(payload: AIChatRequest):
                         parts = candidates[0].get("content", {}).get("parts", [])
                         if parts:
                             ai_text = parts[0].get("text", "")
-        except Exception as e:
-            print("Gemini API error (falling back to local):", e)
+                            from_gemini = bool(ai_text)
+                else:
+                    logger.warning(
+                        "Gemini javob bermadi (status=%s), lokal bilimga o'tilmoqda.",
+                        res.status_code,
+                    )
+        except Exception:
+            logger.warning("Gemini API xatosi, lokal bilimga o'tilmoqda.", exc_info=True)
 
-    # Fallback to local subject knowledge if API is unreachable
+    # Fallback to local subject knowledge if API is unreachable.
+    # Kalit so'zlar fanga bog'langan: aks holda Kimyo savoliga kvadrat tenglama
+    # haqidagi javob qaytib qolardi.
     if not ai_text:
-        q_lower = payload.question.lower()
-        if "tenglama" in q_lower or "diskriminant" in q_lower:
+        q_lower = question.lower()
+        if payload.subjectId == "matematika" and ("tenglama" in q_lower or "diskriminant" in q_lower):
             ai_text = (
                 "Kvadrat tenglamani yechish bo'yicha tushuntirish:\n\n"
                 "ax² + bx + c = 0 formulasi bo'yicha:\n"
@@ -71,7 +126,7 @@ async def ask_ai_tutor(payload: AIChatRequest):
                 "2. Agar D > 0 bo'lsa, x₁,₂ = (-b ± √D) / 2a\n"
                 "Misol: x² - 5x + 6 = 0 bo'lganda D = 25 - 24 = 1. Ildizlar: x₁=3, x₂=2."
             )
-        elif "nyuton" in q_lower or "kuch" in q_lower:
+        elif payload.subjectId == "fizika" and ("nyuton" in q_lower or "kuch" in q_lower):
             ai_text = (
                 "Nyutonning II qonuni:\n\n"
                 "Formula: F = m · a\n"
@@ -81,21 +136,30 @@ async def ask_ai_tutor(payload: AIChatRequest):
         else:
             ai_text = (
                 f"{sub['name']} fani bo'yicha tahlil:\n\n"
-                f"'{payload.question}' savoli bo'yicha eng muhim tushuncha — bu mavzuning amaliy formulalari va qoidalarini aniq qo'llashdir.\n"
+                f"'{question}' savoli bo'yicha eng muhim tushuncha — bu mavzuning amaliy formulalari va qoidalarini aniq qo'llashdir.\n"
                 "Ushbu mavzuni mustahkamlash uchun VOXY Testlar bo'limida sinov testini yechishni tavsiya qilaman!"
             )
 
-    # Log to MongoDB conversations if connected
+    # Log to MongoDB conversations if connected.
+    # Yozib bo'lmasa ham javob BERILADI: suhbat jurnali yordamchi narsa, javob esa
+    # asosiy mahsulot. Ilgari bu `await` himoyasiz edi — Atlas qo'lga tushsa yoki
+    # yozishga ruxsat bo'lmasa, Gemini allaqachon qaytargan to'g'ri javob
+    # tashlanib, foydalanuvchi 500 olardi.
     if db is not None:
-        await db["ai_conversations"].insert_one({
-            "subjectId": payload.subjectId,
-            "question": payload.question,
-            "response": ai_text,
-            "timestamp": time.time()
-        })
+        try:
+            await db["ai_conversations"].insert_one({
+                "userId": claims["sub"],
+                "subjectId": payload.subjectId,
+                "question": question,
+                "response": ai_text,
+                "timestamp": time.time()
+            })
+        except Exception as e:
+            logger.warning("AI suhbatini jurnalga yozib bo'lmadi: %s", e)
 
     return AIChatResponse(
         subjectId=payload.subjectId,
         response=ai_text,
-        suggestedTopics=sub.get("sampleQuestions", [])
+        suggestedTopics=sub.get("sampleQuestions", []),
+        source="gemini" if from_gemini else "offline",
     )

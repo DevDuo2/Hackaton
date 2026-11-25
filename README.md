@@ -148,6 +148,7 @@ The full list of variables is in `deploy/env.template`. Create `.env.example` fr
 | `TELEGRAM_INIT_DATA_MAX_AGE_SECONDS` | no | 60–86400, default 3600 |
 | `APP_ENV` | no | `development` (default) or `production`. In `production`, the server won't start with `DEV_SKIP_TELEGRAM_AUTH=true` |
 | `DEV_SKIP_TELEGRAM_AUTH` | no | `true` only for local testing at `http://localhost`. Refused through a tunnel and in production |
+| `RUN_BOT_IN_WEB` | no | `true` runs the Telegram bot inside the web process. For free hosts (Render free) that have no background worker: one service serves the Mini App, the voice API and the bot. Requires a single instance — two pollers make Telegram return `Conflict` |
 
 If `GEMINI_API_KEY` is missing, `/api/voice/status` returns `configured: false`, the Mini App shows "AI: sozlanmagan" (not configured) and disables Start, and `POST /api/voice/session` responds `503 ai_not_configured`. A wrong key, a missing model or an exhausted quota shows up as an error state with codes `ai_auth_failed`, `ai_model_unavailable` or `ai_quota`.
 
@@ -185,6 +186,12 @@ uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1 --proxy-hea
 # worker
 python -m app.bot
 ```
+
+**Free hosting without a worker process.** Render's free plan has no background
+worker, so set `RUN_BOT_IN_WEB=true` and the web service runs the bot in its own
+event loop (one instance only). Such plans also sleep after ~15 minutes without
+inbound traffic, which stops polling — keep a free cron pinging `/api/health`
+every 10 minutes. Step by step: [`DEPLOYMENT.md`](DEPLOYMENT.md) step 4.5.
 
 Or `docker build -t voxy .`, which gives one image for both services.
 

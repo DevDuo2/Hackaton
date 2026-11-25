@@ -12,17 +12,21 @@ db = MongoDB()
 
 async def connect_to_mongo():
     """MongoDB ga ulanishni hosil qiladi"""
+    client = None
     try:
         logger.info(f"Connecting to MongoDB: {settings.DB_NAME}...")
-        db.client = AsyncIOMotorClient(
-            settings.MONGO_URI,
-            serverSelectionTimeoutMS=5000
-        )
-        db.db = db.client[settings.DB_NAME]
-        # Ping test
-        await db.client.admin.command('ping')
+        client = AsyncIOMotorClient(settings.MONGO_URI, serverSelectionTimeoutMS=5000)
+        # Ping o'tmaguncha `db.db` to'ldirilmaydi: aks holda get_database() o'lik
+        # ulanishni qaytaradi va zaxira rejim o'rniga har bir so'rov 500 beradi.
+        await client.admin.command("ping")
+        db.client = client
+        db.db = client[settings.DB_NAME]
         logger.info("✓ MongoDB ga muvaffaqiyatli ulandi!")
     except Exception as e:
+        if client is not None:
+            client.close()
+        db.client = None
+        db.db = None
         logger.warning(f"⚠️ MongoDB ulanmadi ({e}). Baza lokal xotira bilan zaxira rejimida ishlaydi.")
 
 async def close_mongo_connection():

@@ -74,11 +74,7 @@ export const Footer = () => {
                   Student Profile
                 </Link>
               </li>
-              <li>
-                <Link href="/admin" className="hover:text-[#2563EB] transition-colors">
-                  Admin Analytics
-                </Link>
-              </li>
+
             </ul>
           </div>
 
@@ -93,10 +89,11 @@ export const Footer = () => {
                   About VOXY
                 </Link>
               </li>
+              {/* FAQ bo'limi hali yozilmagan: havola `/#faq` ga olib borardi,
+                  lekin bosh sahifada bunday anker yo'q edi — bosilganda hech
+                  narsa bo'lmasdi. Yonidagi Privacy/Terms kabi matn qoldirildi. */}
               <li>
-                <Link href="/#faq" className="hover:text-[#2563EB] transition-colors">
-                  FAQ
-                </Link>
+                <span className="text-slate-400">FAQ (Demo)</span>
               </li>
               <li>
                 <span className="text-slate-400">Privacy Policy (Demo)</span>

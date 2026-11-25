@@ -14,11 +14,18 @@ This script does NOT test the microphone or browser playback; see docs/real-devi
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 import sys
 import time
 from pathlib import Path
 from urllib.parse import urlparse
+
+# Windows konsoli ko'pincha cp1251/cp866 bo'ladi va "≈", "—" kabi belgilarda
+# skript UnicodeEncodeError bilan qulab tushadi — tekshiruv natijasi ko'rinmay qoladi.
+for _stream in (sys.stdout, sys.stderr):
+    with contextlib.suppress(Exception):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 

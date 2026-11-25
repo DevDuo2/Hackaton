@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { BarChart3, TrendingUp, Users, Clock, Award, Activity, Zap, Cpu } from 'lucide-react';
+import { BarChart3, Users, Clock } from 'lucide-react';
 import { AdminLayout } from '../../../components/layout/AdminLayout';
 
 export default function AdminAnalyticsPage() {
@@ -11,14 +11,15 @@ export default function AdminAnalyticsPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Platforma Ko'rsatkichlari & Chuqur Tahlil
+              Platforma Ko&apos;rsatkichlari & Chuqur Tahlil
             </h1>
+            <span className="ml-2 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold align-middle">DEMO MA&apos;LUMOT</span>
             <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-bold">
               Real-time Telemetry
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Server yuki, darslarni o'zlashtirish tezligi va AI tutor bilan muloqot statistikasi.
+            Server yuki, darslarni o&apos;zlashtirish tezligi va AI tutor bilan muloqot statistikasi.
           </p>
         </div>
 
@@ -31,7 +32,7 @@ export default function AdminAnalyticsPage() {
               </div>
             </div>
             <p className="text-3xl font-black text-white">2,480</p>
-            <p className="text-xs text-emerald-400 font-semibold mt-1">+14% o'tgan haftaga nisbatan</p>
+            <p className="text-xs text-emerald-400 font-semibold mt-1">+14% o&apos;tgan haftaga nisbatan</p>
             <div className="mt-4 w-full h-2 bg-slate-800 rounded-full overflow-hidden">
               <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full w-[78%]" />
             </div>
@@ -39,13 +40,13 @@ export default function AdminAnalyticsPage() {
 
           <div className="rounded-2xl bg-[#0F172A]/90 border border-slate-800 p-6 shadow-xl backdrop-blur-md">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">AI Tutor So'rovlari Soni</span>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">AI Tutor So&apos;rovlari Soni</span>
               <div className="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center">
                 <BarChart3 className="w-5 h-5" />
               </div>
             </div>
             <p className="text-3xl font-black text-white">48,920</p>
-            <p className="text-xs text-purple-400 font-semibold mt-1">O'rtacha javob tezligi: 0.8s (Gemini Flash)</p>
+            <p className="text-xs text-purple-400 font-semibold mt-1">O&apos;rtacha javob tezligi: 0.8s (Gemini Flash)</p>
             <div className="mt-4 w-full h-2 bg-slate-800 rounded-full overflow-hidden">
               <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full w-[92%]" />
             </div>
@@ -53,7 +54,7 @@ export default function AdminAnalyticsPage() {
 
           <div className="rounded-2xl bg-[#0F172A]/90 border border-slate-800 p-6 shadow-xl backdrop-blur-md">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ovozli Mashg'ulotlar Vaqti</span>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ovozli Mashg&apos;ulotlar Vaqti</span>
               <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
                 <Clock className="w-5 h-5" />
               </div>

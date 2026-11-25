@@ -1,18 +1,21 @@
 import { NextResponse } from 'next/server';
-import { DEMO_USERS } from '../../../../lib/auth';
+import { forwardedFor, proxyJson } from '../../../../lib/proxy';
 
 export async function GET(request: Request) {
-  // Returns current active demo user
-  const user = DEMO_USERS[0];
-  return NextResponse.json({
-    authenticated: true,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      selectedSubject: user.selectedSubject,
-      avatar: user.avatar,
-    },
+  const authorization = request.headers.get('authorization');
+
+  if (!authorization) {
+    return NextResponse.json(
+      { authenticated: false, error: 'Avtorizatsiya talab qilinadi' },
+      { status: 401 }
+    );
+  }
+
+  // Profil tokendagi `sub` bo'yicha backenddan olinadi — demo foydalanuvchi qaytarilmaydi.
+  const { status, body } = await proxyJson('/api/auth/me', {
+    method: 'GET',
+    headers: { authorization, ...forwardedFor(request) },
   });
+
+  return NextResponse.json(body, { status });
 }

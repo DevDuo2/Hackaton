@@ -6,9 +6,10 @@ Production:   see Procfile / Dockerfile / docs/deployment.md (single worker: tic
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import re
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -63,6 +64,11 @@ def _configure_logging() -> None:
     root = logging.getLogger()
     if not root.handlers:
         logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    # httpx INFO qatorlari to'liq URL'ni yozadi, Telegram URL'ida esa BOT TOKEN bor
+    # ("POST https://api.telegram.org/bot<TOKEN>/getMe"). RUN_BOT_IN_WEB rejimida bu
+    # token hosting loglariga tushib ketardi.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
     for name in ("uvicorn.error", "uvicorn.access"):
         target = logging.getLogger(name)
         if not any(isinstance(f, RedactTicketFilter) for f in target.filters):
@@ -73,6 +79,30 @@ def _gemini_gateway(settings: VoiceSettings) -> AIGateway:
     return GeminiGateway(settings.gemini_api_key)
 
 
+def _lifespan(settings: Settings):
+    """RUN_BOT_IN_WEB=true bo'lsa, Telegram botni shu jarayonda yurgizadi.
+
+    Bepul hostinglarda (Render free) alohida worker yo'q — bitta veb-servis
+    Mini App'ni ham, ovozli API'ni ham, botni ham ko'taradi.
+    """
+
+    @contextlib.asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        app.state.bot_application = None
+        if settings.run_bot_in_web:
+            from app.bot.embedded import start_embedded_bot, stop_embedded_bot
+
+            app.state.bot_application = await start_embedded_bot(settings)
+            try:
+                yield
+            finally:
+                await stop_embedded_bot(app.state.bot_application)
+            return
+        yield
+
+    return lifespan
+
+
 def create_app(settings: Settings | None = None, gateway_factory: GatewayFactory | None = None) -> FastAPI:
     _configure_logging()
     settings = settings or load_settings()
@@ -80,7 +110,8 @@ def create_app(settings: Settings | None = None, gateway_factory: GatewayFactory
 
     docs = None if settings.is_production else "/docs"  # no interactive API docs in production
     app = FastAPI(title="VOXY API", version="0.3.0", docs_url=docs, redoc_url=None,
-                  openapi_url=None if settings.is_production else "/openapi.json")
+                  openapi_url=None if settings.is_production else "/openapi.json",
+                  lifespan=_lifespan(settings))
     app.state.settings = settings
     app.state.tickets = TicketStore()
     app.state.gateway_factory = gateway_factory or _gemini_gateway

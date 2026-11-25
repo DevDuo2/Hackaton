@@ -11,6 +11,9 @@
 *.pfx
 credentials*.json
 service-account*.json
+# Fayl-bazadagi foydalanuvchilar: parollar ochiq matnda yotgan va u git'ga
+# tushib ketgan edi. Autentifikatsiya endi faqat backendda — bu fayl kerak emas.
+my-app/data/users.json
 
 # Dependencies
 node_modules/

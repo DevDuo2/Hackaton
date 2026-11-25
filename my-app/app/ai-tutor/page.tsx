@@ -1,67 +1,110 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-  Sparkles,
   Send,
   Bot,
   User,
   Lightbulb,
-  Trash2,
   Copy,
   Check,
   RotateCcw,
-  BookOpen,
 } from 'lucide-react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { SUBJECTS } from '../../data/mockData';
-import { askAiTutorApi } from '../../lib/api';
+import { ApiError, askAiTutorApi, fetchAiStatus } from '../../lib/api';
+import { SUBJECT_KEY } from '../../lib/auth';
+import { useStoredString } from '../../lib/clientStore';
 
 interface Message {
   id: string;
   sender: 'ai' | 'user';
   text: string;
   timestamp: string;
+  isError?: boolean;
+  /** Javob serverdagi zaxira bilim bazasidan (Gemini ulanmagan). */
+  isOffline?: boolean;
+}
+
+/** Xabar id lari: Date.now() bir millisekundda ikki xabarga bir xil kalit beradi
+ *  (va render paytida chaqirilsa react-hooks/purity qoidasini buzadi). */
+function useMessageId() {
+  const counter = useRef(0);
+  return () => `m${++counter.current}`;
+}
+
+function clockLabel(): string {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function AITutorPage() {
-  const [activeSubjectId, setActiveSubjectId] = useState('matematika');
-  const [messages, setMessages] = useState<Message[]>([]);
+  const router = useRouter();
+  // Fan localStorage dan render vaqtida o'qiladi; sidebar o'zgartirsa hook xabar beradi.
+  const activeSubjectId = useStoredString(SUBJECT_KEY) ?? 'matematika';
+  // Suhbat QAYSI fanga tegishli ekani bilan birga saqlanadi. Shu tufayli fan
+  // almashganda uni effekt ichida tozalash kerak emas (bu `setState` ni
+  // effekt ichida chaqirishga olib kelardi): mos kelmasa, shunchaki yangi
+  // salomlashuv ko'rsatiladi. Xuddi shu yondashuv /games sahifasida ham.
+  const [conversation, setConversation] = useState<
+    { subjectId: string; messages: Message[] } | null
+  >(null);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [aiConfigured, setAiConfigured] = useState<boolean | null>(null);
+  const nextId = useMessageId();
+
+  // AI haqiqatan ulanganmi? Ulanmagan bo'lsa, foydalanuvchi oldindan
+  // tayyorlangan matnni «AI javobi» deb o'ylamasligi kerak.
+  useEffect(() => {
+    let cancelled = false;
+    fetchAiStatus()
+      .then((status) => !cancelled && setAiConfigured(status.configured))
+      .catch(() => !cancelled && setAiConfigured(null));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const currentSubject =
     SUBJECTS.find((s) => s.id === activeSubjectId) || SUBJECTS[0];
 
-  useEffect(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('voxy_active_subject') : null;
-    const initialId = saved || 'matematika';
-    setActiveSubjectId(initialId);
+  // Salomlashuv render vaqtida hisoblanadi: vaqt tamg'asi yo'q (u mazmunsiz edi),
+  // shuning uchun soat funksiyasini render ichida chaqirish kerak emas.
+  const greeting: Message = {
+    id: 'greeting',
+    sender: 'ai',
+    text: currentSubject.aiGreeting,
+    timestamp: '',
+  };
+  const messages =
+    conversation?.subjectId === activeSubjectId ? conversation.messages : [greeting];
+  const setMessages: React.Dispatch<React.SetStateAction<Message[]>> = (value) => {
+    const base = messages;
+    const next = typeof value === 'function' ? value(base) : value;
+    setConversation({ subjectId: activeSubjectId, messages: next });
+  };
 
-    const sub = SUBJECTS.find((s) => s.id === initialId) || SUBJECTS[0];
-    setMessages([
-      {
-        id: '1',
-        sender: 'ai',
-        text: sub.aiGreeting,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      },
-    ]);
-  }, []);
+  // Yangi xabar kelganda pastga suriladi. Ilgari javob ekran tashqarisida
+  // paydo bo'lar va foydalanuvchi uni qo'lda qidirishi kerak bo'lardi.
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+  }, [messages.length, isTyping]);
 
   const handleSend = async (textToSend?: string) => {
     const text = textToSend || inputMessage;
     if (!text.trim()) return;
 
     const userMsg: Message = {
-      id: Date.now().toString(),
+      id: nextId(),
       sender: 'user',
       text: text,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: clockLabel(),
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -70,33 +113,37 @@ export default function AITutorPage() {
 
     try {
       // First attempt: Call FastAPI backend (Google Gemini 3.5 Flash Lite)
-      const aiReply = await askAiTutorApi(currentSubject.id, text);
+      const reply = await askAiTutorApi(currentSubject.id, text);
       const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
+        id: nextId(),
         sender: 'ai',
-        text: aiReply,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: reply.response,
+        timestamp: clockLabel(),
+        isOffline: reply.source === 'offline',
       };
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {
-      console.warn('Backend unavailable, using instant educational fallback', err);
-      // Fallback if backend is waking up or offline
-      let aiResponseText = `Ajoyib savol! ${currentSubject.name} bo'yicha tushuntirish:\n\n1. **Asosiy qoida:** ${text} bo'yicha eng muhim tushuncha bu uning qonuniyatlari va amaliy qo'llanilishidir.\n2. **Qadam-baqadam yechim:** Masalani tahlil qilishda dastlab berilgan kattaliklar aniqlanadi, so'ngra mos formula yoki algoritm tatbiq etiladi.\n3. **Tavsiya:** Ushbu mavzuni mustahkamlash uchun VOXY Testlar bo'limida bir nechta amaliy test ishlab ko'ring!`;
-
-      if (text.toLowerCase().includes('tenglama') || text.toLowerCase().includes('diskriminant')) {
-        aiResponseText = `**Kvadrat tenglamani diskriminant orqali yechish:**\n\nUmumiy ko'rinishi: ax² + bx + c = 0\n\n1. **Diskriminant formulasi:** D = b² - 4ac\n2. **Natijani tekshirish:**\n   - Agar D > 0 bo'lsa, 2 ta haqiqiy ildiz bor: x₁,₂ = (-b ± √D) / 2a\n   - Agar D = 0 bo'lsa, 1 ta ildiz bor: x = -b / 2a\n   - Agar D < 0 bo'lsa, haqiqiy ildizlar mavjud emas.\n\nMisol: x² - 5x + 6 = 0 da a=1, b=-5, c=6. D = 25 - 24 = 1. x₁ = (5+1)/2 = 3, x₂ = (5-1)/2 = 2.`;
-      } else if (text.toLowerCase().includes('nyuton') || text.toLowerCase().includes('kuch')) {
-        aiResponseText = `**Nyutonning II Qonuni:**\n\nFormula: **F = m · a**\n\nJismga ta'sir qiluvchi barcha kuchlarning teng ta'sir etuvchisi jism massasi bilan uning olgan tezlanishi ko'paytmasiga teng.\n\n- Masalan: 4 kg massali aravachani 5 m/s² tezlanish bilan harakatlantirish uchun unga F = 4 · 5 = 20 N kuch qo'yish kerak bo'ladi.`;
+      // Soxta "AI javobi" ko'rsatmaymiz: backend javob bermasa, buni ochiq aytamiz.
+      // Gemini ishlamay qolsa, backendning o'zida zaxira bilim bazasi bor.
+      if (err instanceof ApiError && err.status === 401) {
+        router.replace('/login');
+        return;
       }
-
-      const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        sender: 'ai',
-        text: aiResponseText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-
-      setMessages((prev) => [...prev, aiMsg]);
+      const retryHint = 'Bir necha soniyadan keyin savolni qaytadan yuboring.';
+      const reason =
+        err instanceof ApiError && err.message
+          ? err.message
+          : "Server bilan bog'lanib bo'lmadi.";
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: nextId(),
+          sender: 'ai',
+          text: [reason, '', retryHint].join('\n'),
+          timestamp: clockLabel(),
+          isError: true,
+        },
+      ]);
     } finally {
       setIsTyping(false);
     }
@@ -136,16 +183,7 @@ export default function AITutorPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() =>
-              setMessages([
-                {
-                  id: '1',
-                  sender: 'ai',
-                  text: currentSubject.aiGreeting,
-                  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                },
-              ])
-            }
+            onClick={() => setConversation(null)}
             icon={<RotateCcw className="w-4 h-4" />}
           >
             Yangi Savol
@@ -168,7 +206,7 @@ export default function AITutorPage() {
                     onClick={() => handleSend(q)}
                     className="w-full text-left p-2.5 rounded-xl text-[11px] leading-snug bg-slate-50 hover:bg-blue-50 hover:text-[#2563EB] border border-slate-200/60 transition-colors text-[#1E293B]"
                   >
-                    "{q}"
+                    &quot;{q}&quot;
                   </button>
                 ))}
               </div>
@@ -177,6 +215,18 @@ export default function AITutorPage() {
 
           {/* Main Messages Container */}
           <Card className="lg:col-span-3 flex flex-col h-[600px] overflow-hidden">
+            {/* AI ulanmagan bo'lsa buni ochiq aytamiz: javoblar serverdagi
+                ma'lumotnomadan keladi va bu «AI javobi» emas. */}
+            {aiConfigured === false && (
+              <div className="px-5 py-3 bg-amber-50 border-b border-amber-200 text-[11px] text-amber-900 font-semibold flex items-start gap-2">
+                <span aria-hidden="true">⚠️</span>
+                <span>
+                  AI xizmati serverda sozlanmagan (GEMINI_API_KEY yo&apos;q). Javoblar
+                  oldindan tayyorlangan ma&apos;lumotnomadan beriladi — bu sun&apos;iy
+                  intellekt javobi emas.
+                </span>
+              </div>
+            )}
             <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50/40">
               {messages.map((msg) => (
                 <div
@@ -200,7 +250,9 @@ export default function AITutorPage() {
                       className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                         msg.sender === 'user'
                           ? 'bg-[#2563EB] text-white rounded-tr-none shadow-sm'
-                          : 'bg-white text-[#1E293B] rounded-tl-none border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.03)]'
+                          : msg.isError
+                            ? 'bg-amber-50 text-amber-900 rounded-tl-none border border-amber-200'
+                            : 'bg-white text-[#1E293B] rounded-tl-none border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.03)]'
                       }`}
                     >
                       {msg.text}
@@ -211,7 +263,12 @@ export default function AITutorPage() {
                         msg.sender === 'user' ? 'justify-end' : ''
                       }`}
                     >
-                      <span>{msg.timestamp}</span>
+                      {msg.timestamp && <span>{msg.timestamp}</span>}
+                      {msg.isOffline && (
+                        <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold">
+                          ma&apos;lumotnoma
+                        </span>
+                      )}
                       {msg.sender === 'ai' && (
                         <button
                           onClick={() => copyToClipboard(msg.id, msg.text)}
@@ -241,6 +298,9 @@ export default function AITutorPage() {
                   </div>
                 </div>
               )}
+
+              {/* Avtomatik surish nuqtasi — yangi javob har doim ko'rinadi. */}
+              <div ref={messagesEndRef} aria-hidden="true" />
             </div>
 
             <div className="p-4 bg-white border-t border-slate-100">

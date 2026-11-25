@@ -32,7 +32,12 @@ class CreateSessionBody(BaseModel):
     mode: Literal["tutor", "english"] = "tutor"
     language: Literal["uz", "en", "ru"] = "uz"
     subject: str | None = Field(default=None, max_length=32)
-    input_sample_rate: int = Field(default=16000, ge=8000, le=48000)
+    # Brauzer AudioContext ning HAQIQIY chastotasini yuboradi, biz uni tanlamaymiz.
+    # Ilgari yuqori chegara 48000 edi: professional audio interfeys yoki ba'zi
+    # Android qurilmalari 96000 ni xabar qilsa, pydantic tushunarsiz 422 qaytarar
+    # va suhbat umuman boshlanmasdi. Chastota Geminiga `audio/pcm;rate=...` da
+    # shundayligicha e'lon qilinadi (44100 va 48000 ham xuddi shunday ishlaydi).
+    input_sample_rate: int = Field(default=16000, ge=8000, le=192000)
 
 
 def _error(status: int, code: str, message: str) -> JSONResponse:

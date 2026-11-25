@@ -11,16 +11,16 @@ import {
   BarChart3,
   Settings,
   Search,
-  Bell,
   Menu,
   X,
   ArrowRightLeft,
   GraduationCap,
-  Activity,
-  CheckCircle2,
   LogOut,
-  Loader2
+  Loader2,
 } from 'lucide-react';
+import { clearSession, getSession, getToken } from '../../lib/auth';
+import { useSession } from '../../lib/clientStore';
+import { fetchHealth } from '../../lib/api';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -31,36 +31,39 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const router = useRouter();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [adminUser, setAdminUser] = useState<{ name?: string; email?: string } | null>(null);
+  // Backend holati HAQIQIY so'rovdan olinadi: null = tekshirilmoqda.
+  const [isBackendUp, setIsBackendUp] = useState<boolean | null>(null);
+  const adminUser = useSession();
+  const isAuthorized = adminUser?.role === 'admin';
 
+  // Backend holatini haqiqatan tekshiradi (har 30 sekundda yangilanadi).
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('voxy_auth_user');
-      if (!stored) {
-        router.push('/admin/login');
-        return;
-      }
-      try {
-        const u = JSON.parse(stored);
-        if (u.role !== 'admin') {
-          router.push('/admin/login');
-          return;
-        }
-        setAdminUser(u);
-        setIsAuthorized(true);
-      } catch (e) {
-        router.push('/admin/login');
-      }
+    let cancelled = false;
+    const ping = () =>
+      fetchHealth()
+        .then(() => !cancelled && setIsBackendUp(true))
+        .catch(() => !cancelled && setIsBackendUp(false));
+    ping();
+    const timer = setInterval(ping, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
+
+  // UI tekshiruvi — himoya emas: /api/admin/* endpointlari tokendagi rolni
+  // backendda qaytadan tekshiradi. localStorage effekt ichida bevosita o'qiladi,
+  // shuning uchun hidratsiya paytidagi bo'sh qiymat noto'g'ri redirect bermaydi.
+  useEffect(() => {
+    const stored = getSession();
+    if (!stored || !getToken() || stored.role !== 'admin') {
+      router.replace('/admin/login');
     }
-  }, [router]);
+  }, [router, adminUser]);
 
   const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('voxy_auth_user');
-      localStorage.removeItem('voxy_auth_token');
-      router.push('/admin/login');
-    }
+    clearSession();
+    router.replace('/admin/login');
   };
 
   if (!isAuthorized) {
@@ -251,24 +254,61 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Admin Search */}
-            <div className="relative w-full">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            {/* Admin Search — Enter bosilganda talabalar katalogiga olib boradi.
+                Ilgari `searchQuery` faqat state edi: hech kim uni o'qimasdi,
+                shuning uchun yozish ham, Enter ham hech narsa qilmasdi. */}
+            <form
+              role="search"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const q = searchQuery.trim();
+                router.push(q ? `/admin/students?q=${encodeURIComponent(q)}` : '/admin/students');
+              }}
+              className="relative w-full"
+            >
+              <label htmlFor="admin-search" className="sr-only">
+                Talabani qidirish
+              </label>
+              <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
-                type="text"
-                placeholder="Qidiruv: talabalar, kurslar, savollar..."
+                id="admin-search"
+                type="search"
+                placeholder="Talabani qidirish (Enter)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9.5 pr-4 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs focus:outline-none focus:border-blue-500 focus:bg-slate-900 transition-all text-white placeholder-slate-500"
+                className="w-full pl-9.5 pr-4 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 transition-all focus:outline-none focus:border-blue-500 focus:bg-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500/40"
               />
-            </div>
+            </form>
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
-            {/* Live System Health Badge */}
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-950/40 border border-emerald-800/50 text-xs font-bold text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Live Telemetry: 100% Operational</span>
+            {/* Backend holati — haqiqiy /api/health so'rovidan, qotib qolgan
+                «100% Operational» yozuvi emas. */}
+            <div
+              className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border ${
+                isBackendUp === null
+                  ? 'bg-slate-900/60 border-slate-700/60 text-slate-300'
+                  : isBackendUp
+                  ? 'bg-emerald-950/40 border-emerald-800/50 text-emerald-300'
+                  : 'bg-red-950/40 border-red-800/50 text-red-300'
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isBackendUp === null
+                    ? 'bg-slate-400'
+                    : isBackendUp
+                    ? 'bg-emerald-400 animate-pulse'
+                    : 'bg-red-400'
+                }`}
+              />
+              <span>
+                {isBackendUp === null
+                  ? 'Backend: tekshirilmoqda...'
+                  : isBackendUp
+                  ? 'Backend: javob beryapti'
+                  : 'Backend: javob bermayapti'}
+              </span>
             </div>
 
             {/* Quick Switch Button */}
@@ -277,17 +317,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-950/40 text-blue-400 hover:bg-blue-900/50 text-xs font-bold transition-colors border border-blue-800/50"
             >
               <GraduationCap className="w-4 h-4" />
-              <span>Talaba Ko'rinishi</span>
+              <span>Talaba Ko&apos;rinishi</span>
             </Link>
 
-            <button
-              className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors relative"
-              aria-label="Notifications"
-            >
-              <Bell className="w-5 h-5" />
-              <span className="w-2 h-2 rounded-full bg-amber-500 absolute top-2 right-2 ring-2 ring-[#0F172A]" />
-            </button>
-
+            {/* Bildirishnomalar tugmasi olib tashlandi: hech qanday
+                bildirishnoma tizimi yo'q edi, tugma bosilganda hech narsa
+                bo'lmasdi, yonidagi sariq nuqta esa «o'qilmagan xabar bor»
+                deb yolg'on ko'rsatardi. */}
             <div className="flex items-center gap-2.5 pl-2 border-l border-slate-800">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-md shadow-blue-600/30">
                 AD

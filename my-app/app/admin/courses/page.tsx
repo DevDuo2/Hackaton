@@ -1,9 +1,10 @@
 'use client';
 
+import Image from 'next/image';
 import React, { useState } from 'react';
-import { Plus, Search, Filter, BookOpen, Edit, Trash2, Layers, CheckCircle2, Star, Sparkles } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { AdminLayout } from '../../../components/layout/AdminLayout';
-import { Badge } from '../../../components/ui/Badge';
+
 import { Button } from '../../../components/ui/Button';
 import { MOCK_COURSES } from '../../../data/mockData';
 
@@ -25,21 +26,27 @@ export default function AdminCoursesPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                Kurslar Katalogi & O'quv Rejasi
+                Kurslar Katalogi & O&apos;quv Rejasi
               </h1>
+            <span className="ml-2 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold align-middle">DEMO MA&apos;LUMOT</span>
               <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-bold">
                 {MOCK_COURSES.length} ta Faol Kurs
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Platforma darslari, modullar, o'qituvchilar va yuklangan o'quv materiallarini boshqaring.
+              Platforma darslari, modullar, o&apos;qituvchilar va yuklangan o&apos;quv materiallarini boshqaring.
             </p>
           </div>
+          {/* Kurs yaratish backendda hali yo'q. Tugma ataylab o'chirilgan va
+              sababi aytilgan: ishlayotgandek ko'rinib, bosilganda hech narsa
+              qilmaslik — eng yomon variant. */}
           <Button
             variant="primary"
             size="sm"
+            disabled
+            title="Kurs yaratish demo doirasiga kirmaydi: backendda bunday endpoint yo'q"
             icon={<Plus className="w-4 h-4" />}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-blue-600/30 border-0"
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold border-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
           >
             Yangi Kurs Yaratish
           </Button>
@@ -60,7 +67,7 @@ export default function AdminCoursesPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              {['All', 'AI', 'Mathematics', 'Programming', 'English'].map((cat) => (
+              {['All', ...Array.from(new Set(MOCK_COURSES.map((c) => c.category))).sort()].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
@@ -83,7 +90,7 @@ export default function AdminCoursesPage() {
                   <th className="py-3.5 px-4">Kurs Nomi & Modullar</th>
                   <th className="py-3.5 px-4">Kategoriya</th>
                   <th className="py-3.5 px-4">Darajasi</th>
-                  <th className="py-3.5 px-4">O'quvchilar Soni</th>
+                  <th className="py-3.5 px-4">O&apos;quvchilar Soni</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4 text-right">Amallar</th>
                 </tr>
@@ -92,7 +99,10 @@ export default function AdminCoursesPage() {
                 {filtered.map((c) => (
                   <tr key={c.id} className="hover:bg-slate-800/50 transition-colors">
                     <td className="py-3.5 px-4 font-bold text-white flex items-center gap-3">
-                      <img src={c.image} alt={c.title} className="w-10 h-10 rounded-xl object-cover border border-slate-800" />
+                      <Image src={c.image} alt={c.title} className="w-10 h-10 rounded-xl object-cover border border-slate-800" 
+                        width={40}
+                        height={40}
+                      />
                       <div>
                         <p className="text-white font-bold">{c.title}</p>
                         <p className="text-[10px] text-slate-400 font-normal">{c.duration} • {c.lessonsCount} ta dars</p>
@@ -116,12 +126,32 @@ export default function AdminCoursesPage() {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right space-x-1">
-                      <button className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs transition-colors cursor-pointer">
+                      <button
+                        type="button"
+                        disabled
+                        title="Kursni tahrirlash demo doirasiga kirmaydi"
+                        className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 border border-slate-700 font-semibold text-xs opacity-50 cursor-not-allowed"
+                      >
                         Tahrirlash
                       </button>
                     </td>
                   </tr>
                 ))}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-10 px-4 text-center text-slate-400">
+                      {/* Ilgari filtr hech narsa topmaganda jadvalda faqat
+                          sarlavhalar qolar va sahifa buzilgandek ko'rinardi. */}
+                      <p className="text-sm font-semibold text-slate-300">
+                        Hech narsa topilmadi
+                      </p>
+                      <p className="text-xs mt-1">
+                        Qidiruv so&apos;zini yoki kategoriyani o&apos;zgartirib
+                        ko&apos;ring.
+                      </p>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

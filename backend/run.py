@@ -1,7 +1,17 @@
+"""Sayt REST API ni lokal ishga tushirish.
+
+Lokalda port 8001: 8000-portni ildizdagi ovozli backend (uvicorn app.main:app)
+egallaydi, ikkalasi bir vaqtda ishlaydi.
+"""
+
+import os
+
 import uvicorn
 
+PORT = int(os.getenv("PORT", "8001"))
+
 if __name__ == "__main__":
-    print("🚀 VOXY AI Backend Server ishga tushmoqda...")
-    print("📖 Swagger API Hujjatlari: http://localhost:8000/docs")
-    print("📖 Redoc API Hujjatlari: http://localhost:8000/redoc")
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    print("VOXY sayt REST API ishga tushmoqda...")
+    print(f"Swagger: http://localhost:{PORT}/docs")
+    print(f"Redoc:   http://localhost:{PORT}/redoc")
+    uvicorn.run("app.main:app", host="0.0.0.0", port=PORT, reload=True)

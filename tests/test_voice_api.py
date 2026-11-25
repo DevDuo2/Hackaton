@@ -469,3 +469,47 @@ def test_audio_during_reconnect_is_dropped_not_queued() -> None:
         ws.send_text(json.dumps({"type": "end"}))
         receive_until(ws, "summary")
     assert gateway.current.realtime_inputs == []
+
+
+def test_user_facing_ai_errors_do_not_name_server_env_vars() -> None:
+    """Talabaga «GEMINI_API_KEY noto'g'ri» deyish — ichki sozlama nomini oshkor qilish."""
+    from google.genai import errors
+
+    from app.services.live_bridge import _error_code
+
+    for exc in (
+        errors.APIError(401, {"error": {"message": "API key not valid"}}),
+        errors.APIError(404, {"error": {"message": "model not found"}}),
+    ):
+        code, message = _error_code(exc)
+        assert code.startswith("ai_")
+        lowered = message.lower()
+        assert "gemini_api_key" not in lowered
+        assert "gemini_live_model" not in lowered
+        assert "api key" not in lowered
+
+
+def test_high_sample_rate_microphones_are_accepted():
+    """96 kHz mikrofon suhbatni boshlashga to'sqinlik qilmasligi kerak.
+
+    Brauzer AudioContext ning haqiqiy chastotasini yuboradi — biz uni
+    tanlamaymiz. Ilgari yuqori chegara 48000 edi va professional audio
+    interfeys yoki ba'zi Android qurilmalari 96000 ni xabar qilganda
+    pydantic tushunarsiz 422 qaytarar, suhbat esa umuman boshlanmasdi.
+    """
+    from app.api.voice import CreateSessionBody
+
+    for rate in (8000, 16000, 44100, 48000, 96000, 192000):
+        assert CreateSessionBody(input_sample_rate=rate).input_sample_rate == rate
+
+
+def test_absurd_sample_rates_are_still_rejected():
+    """Chegara butunlay olib tashlanmadi: ma'nosiz qiymat baribir rad etiladi."""
+    import pytest
+    from pydantic import ValidationError
+
+    from app.api.voice import CreateSessionBody
+
+    for rate in (0, 100, 1_000_000):
+        with pytest.raises(ValidationError):
+            CreateSessionBody(input_sample_rate=rate)

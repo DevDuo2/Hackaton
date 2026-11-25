@@ -11,12 +11,6 @@ export interface Subject {
   studentsCount: number;
   sampleQuestions: string[];
   aiGreeting: string;
-  quizzes: {
-    question: string;
-    options: string[];
-    correctIndex: number;
-    explanation: string;
-  }[];
 }
 
 export const SUBJECTS: Subject[] = [
@@ -38,20 +32,6 @@ export const SUBJECTS: Subject[] = [
       'Trigonometriya formulalarini oson eslab qolish yo\'li',
     ],
     aiGreeting: 'Assalomu alaykum! Men Matematika bo\'yicha sizning shaxsiy AI murabbiyingizman. Algebra, geometriya, formulalar yoki murakkab masalalar bo\'yicha savolingizni bering, birgalikda tahlil qilamiz!',
-    quizzes: [
-      {
-        question: "Agar x² - 5x + 6 = 0 bo'lsa, tenglamaning ildizlari nechaga teng?",
-        options: ["x = 2 va x = 3", "x = -2 va x = -3", "x = 1 va x = 6", "x = 0 va x = 5"],
-        correctIndex: 0,
-        explanation: "Vieta teoremasiga ko'ra: x₁ + x₂ = 5 va x₁ * x₂ = 6. Demak ildizlar 2 va 3 bo'ladi."
-      },
-      {
-        question: "To'g'ri burchakli uchburchakda gipotenuza c=10, katet a=6 bo'lsa, ikkinchi katet b nechaga teng?",
-        options: ["b = 8", "b = 7", "b = 9", "b = 4"],
-        correctIndex: 0,
-        explanation: "Pifagor teoremasi: b = √(c² - a²) = √(100 - 36) = √64 = 8."
-      }
-    ]
   },
   {
     id: 'fizika',
@@ -71,20 +51,6 @@ export const SUBJECTS: Subject[] = [
       'Kvant nima va foton qanday energiyaga ega?',
     ],
     aiGreeting: 'Salom! Men Fizika bo\'yicha AI repetitoringizman. Tabiat hodisalari, harakat qonunlari, elektr zanjirlari yoki formulalar bo\'yicha xohlagan savolingizni bering!',
-    quizzes: [
-      {
-        question: "Jismga ta'sir etuvchi kuch 20 N va uning massasi 4 kg bo'lsa, uning tezlanishi qanday bo'ladi?",
-        options: ["5 m/s²", "80 m/s²", "0.2 m/s²", "16 m/s²"],
-        correctIndex: 0,
-        explanation: "Nyutonning ikkinchi qonuni: a = F / m = 20 / 4 = 5 m/s²."
-      },
-      {
-        question: "Yorug'likning vakuumdagi tarqalish tezligi taxminan qanchaga teng?",
-        options: ["300,000 km/s", "150,000 km/s", "1,000,000 km/s", "30,000 km/s"],
-        correctIndex: 0,
-        explanation: "Vakuumdagi yorug'lik tezligi c ≈ 300,000 km/s (3×10⁸ m/s) ga teng."
-      }
-    ]
   },
   {
     id: 'dasturlash',
@@ -104,20 +70,6 @@ export const SUBJECTS: Subject[] = [
       'REST API va GraphQL o\'rtasidagi asosiy farqlar',
     ],
     aiGreeting: 'Salom dasturchi! Men Dasturlash va IT yo\'nalishidagi AI mentoriman. Kod xatolarini to\'g\'rilash, arxitektura yoki yangi texnologiyalarni o\'rganishda yordam beraman!',
-    quizzes: [
-      {
-        question: "Qaysi ma'lumotlar tuzilmasi LIFO (Last In First Out) prinsipi asosida ishlaydi?",
-        options: ["Stack (Stek)", "Queue (Navbat)", "Array (Massiv)", "Linked List"],
-        correctIndex: 0,
-        explanation: "Stack oxirgi kirgan elementni birinchi bo'lib chiqarish (LIFO) printsipida ishlaydi."
-      },
-      {
-        question: "Next.js da statik sahifalarni oldindan generatsiya qilish uchun qaysi funksiya ishlatiladi?",
-        options: ["generateStaticParams", "useStaticPrerender", "createStaticProps", "buildPages"],
-        correctIndex: 0,
-        explanation: "Next.js App Router'da dinamik [id] sahifalar uchun generateStaticParams ishlatiladi."
-      }
-    ]
   },
   {
     id: 'kimyo',
@@ -137,14 +89,6 @@ export const SUBJECTS: Subject[] = [
       'Organik kimyoda uglevodorodlar guruhlari',
     ],
     aiGreeting: 'Salom! Men Kimyo fani bo\'yicha shaxsiy AI yordamchingizman. Elementlar, reaksiyalar va formulalar bo\'yicha savollaringizni bering!',
-    quizzes: [
-      {
-        question: "Suv molekulasining (H₂O) kimyoviy bog'lanish turi qanday?",
-        options: ["Qutbli kovalent bog'lanish", "Ionli bog'lanish", "Metall bog'lanish", "Qutbsiz kovalent bog'lanish"],
-        correctIndex: 0,
-        explanation: "Suvda turli elektromanzifiylikka ega vodorod va kislorod atomlari qutbli kovalent bog' hosil qiladi."
-      }
-    ]
   },
   {
     id: 'biologiya',
@@ -164,14 +108,6 @@ export const SUBJECTS: Subject[] = [
       'Inson qon aylanish sistemasi qanday ishlaydi?',
     ],
     aiGreeting: 'Assalomu alaykum! Men Biologiya bo\'yicha AI repetitoringizman. Tirik organizmlar, genetika yoki anatomiya haqida istalgan mavzuni birgalikda o\'rganamiz!',
-    quizzes: [
-      {
-        question: "Hujayraning 'energiya stansiyasi' deb qaysi organoid ataladi?",
-        options: ["Mitoxondriya", "Ribosoma", "Lizosoma", "Golji majmuasi"],
-        correctIndex: 0,
-        explanation: "Mitoxondriyalar hujayra nafas olishida ATF energiyasini sintez qiladi."
-      }
-    ]
   },
   {
     id: 'ingliz-tili',
@@ -191,14 +127,6 @@ export const SUBJECTS: Subject[] = [
       'Formal va informal ingliz tili farqlari',
     ],
     aiGreeting: 'Hello there! I am your AI English coach. Ask me about grammar rules, essay writing tips, or idioms to speak like a native speaker!',
-    quizzes: [
-      {
-        question: "Choose the correct sentence: 'She has been working here _____ 2021.'",
-        options: ["since", "for", "during", "from"],
-        correctIndex: 0,
-        explanation: "Muayyan boshlanish nuqtasi (2021) ko'rsatilganda 'since' ishlatiladi."
-      }
-    ]
   },
   {
     id: 'ona-tili',
@@ -218,14 +146,6 @@ export const SUBJECTS: Subject[] = [
       'She\'riy san\'atlar (tashbeh, istiora, tazod)',
     ],
     aiGreeting: 'Assalomu alaykum! Ona tili va adabiyot bo\'yicha shaxsiy AI ustozi bilan suhbatdasiz. Grammatika qoidalari yoki adabiy tahlillar bo\'yicha savollaringizni kutaman!',
-    quizzes: [
-      {
-        question: "Alisher Navoiyning 'Xamsa'siga kirmaydigan dostonni toping:",
-        options: ["Lison ut-tayr", "Hayrat ul-abror", "Farhod va Shirin", "Saddi Iskandariy"],
-        correctIndex: 0,
-        explanation: "'Lison ut-tayr' alohida falsafiy doston bo'lib, beshlik (Xamsa) dostonlari tarkibiga kirmaydi."
-      }
-    ]
   }
 ];
 
@@ -390,16 +310,12 @@ export const MOCK_COURSES: Course[] = [
   },
 ];
 
-export const MOCK_QUIZ_QUESTIONS = SUBJECTS.flatMap((s, sIdx) =>
-  s.quizzes.map((q, qIdx) => ({
-    id: sIdx * 100 + qIdx + 1,
-    question: q.question,
-    options: q.options,
-    correctIndex: q.correctIndex,
-    explanation: q.explanation,
-    subjectName: s.name,
-  }))
-);
+// MOCK_QUIZ_QUESTIONS olib tashlandi. U SUBJECTS[].quizzes dan hosil qilinar
+// va `correctIndex` bilan birga brauzer bundliga tushardi: savollar matni
+// backenddagidan bir oz boshqacha bo'lsa ham TO'G'RI JAVOB MATNI aynan bir
+// xil edi, demak har qanday tashrifchi bundldan javoblarni o'qib olardi.
+// Admin paneliga savollar endi /api/admin/quizzes dan keladi (token talab
+// qiladi), talabalar esa /api/quizzes/daily dan — javoblarsiz.
 
 export const MOCK_LESSONS: Lesson[] = [
   { id: '1', title: 'Kirish: Asosiy qoidalar va tushunchalar', duration: '12 min', completed: true, module: '1-Modul: Asoslar' },
